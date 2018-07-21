@@ -96,13 +96,6 @@ class MPII(Dataset):
 
         with open(self.annotations_path, 'w') as out_file:
             json.dump(data, out_file)
-            self.annotations = json.load(data)
-
-        mean_name = 'means.npy'
-        mean_path = os.path.join(self.root, mean_name)
-        if not os.path.isfile(mean_path):
-            mean, std = self.compute_mean()
-            np.save(mean_path, np.array([mean, std]))
 
     def compute_mean(self):
         mean, std = np.zeros(3, dtype=np.float), np.zeros(3, dtype=np.float)
