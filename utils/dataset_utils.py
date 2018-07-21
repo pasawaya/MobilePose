@@ -58,7 +58,7 @@ def visualize_center_map(image, center_map):
     plt.show()
 
 
-def compute_label_map(x, y, visibility, size, sigma=7, stride=8):
+def compute_label_map(x, y, visibility, size=256, sigma=7, stride=4):
     if len(x.shape) < 2:
         x = np.expand_dims(x, 0)
         y = np.expand_dims(y, 0)
@@ -66,7 +66,7 @@ def compute_label_map(x, y, visibility, size, sigma=7, stride=8):
 
     t = x.shape[0]
     n_joints = x.shape[1]
-    label_size = np.floor((size - 0.5) / stride).astype(int)
+    label_size = np.floor(size / stride).astype(int)
     label_map = np.zeros((t, n_joints + 1, label_size, label_size))
     start = (stride / 2.) - 0.5
     for t in range(t):
@@ -87,7 +87,7 @@ def compute_label_map(x, y, visibility, size, sigma=7, stride=8):
     return torch.from_numpy(label_map).float()
 
 
-def compute_center_map(size, sigma=21):
+def compute_center_map(size=256, sigma=21):
     shape = (size, size)
     x, y = size / 2, size / 2
     X, Y = np.meshgrid(np.linspace(0, shape[0], shape[0]), np.linspace(0, shape[1], shape[1]))

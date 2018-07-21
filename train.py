@@ -1,6 +1,5 @@
 
 from torch.utils.data import DataLoader
-from utils.image_utils import *
 from utils.train_utils import *
 import argparse
 import pycrayon
@@ -11,6 +10,7 @@ from utils.evaluation import accuracy
 from models.RecurrentStackedHourglass import PretrainRecurrentStackedHourglass
 from utils.augmentation import ImageTransformer
 import torch
+from models.MSESequenceLoss import MSESequenceLoss
 
 
 def train(model, loader, criterion, optimizer, scheduler, device, summary=None):
@@ -79,12 +79,12 @@ def main(args):
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, **loader_args)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=args.batch_size, shuffle=False, **loader_args)
 
-    model = PretrainRecurrentStackedHourglass(3, 64, MPII.n_joints + 1, device, T=args.t, depth=args.depth)
+    model = PretrainRecurrentStackedHourglass(3, 64, train_dataset.n_joints + 1, device, T=args.t, depth=args.depth)
     model = model.to(device)
 
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.decay, momentum=0.9)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop_interval, gamma=args.lr_drop_factor)
-    criterion = nn.MSELoss()
+    criterion = MSESequenceLoss()
 
     summary = None
     if args.use_tensorboard:

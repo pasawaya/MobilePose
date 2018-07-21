@@ -21,8 +21,8 @@ class PretrainRecurrentStackedHourglass(nn.Module):
         self.res2 = ResidualBlock(128, 128)
         self.res3 = ResidualBlock(128, hidden_channels)
 
-        self.hg_1 = RecurrentHourglass(depth, hidden_channels, out_channels, device)
-        self.hg_t = RecurrentHourglass(depth, hidden_channels, out_channels, device)
+        self.hg_0 = RecurrentHourglass(depth, hidden_channels + 1, out_channels, device)
+        self.hg_t = RecurrentHourglass(depth, hidden_channels + out_channels + 1, out_channels, device)
 
         self.apply(initialize_weights_kaiming)
 
@@ -35,13 +35,14 @@ class PretrainRecurrentStackedHourglass(nn.Module):
         x = self.res2(x)
         x = self.res3(x)
 
-        b_1 = self.hg_1(x)
-        beliefs = [b_1]
+        x_0 = torch.cat([x, centers], dim=1)
+        b_1 = self.hg_0(x_0)
+        beliefs = []
 
         b_t_1 = b_1
-        for t in range(self.T - 1):
-            x = torch.cat([x, b_t_1], dim=1)
-            b_t = self.hg_t(x, b_t_1)
+        for t in range(self.T):
+            x_t = torch.cat([x, b_t_1, centers], dim=1)
+            b_t = self.hg_t(x_t)
             beliefs.append(b_t)
             b_t_1 = b_t
 
