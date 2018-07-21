@@ -1,17 +1,24 @@
 
 from torch.utils.data import Dataset
+
 import os
-from scipy.io import loadmat
 import json
-from pprint import pprint
+import numpy as np
+
+from utils.dataset_utils import *
+from skimage.io import imread, imshow
+from matplotlib import pyplot as plt
+from scipy.io import loadmat
+from utils.augmentation import ImageTransformer
 
 
 class MPII(Dataset):
-    def __init__(self, root, input_size=256, train=True):
+    def __init__(self, root, transformer=None, input_size=256, train=True):
         self.root = root
         self.train = train
         self.input_size = input_size
         self.flag = int(train)
+        self.transformer = transformer
 
         annotations_name = 'mpii_train.json' if train else 'mpii_valid.json'
         self.annotations_path = os.path.join(self.root, annotations_name)
@@ -25,9 +32,16 @@ class MPII(Dataset):
         return len(self.annotations)
 
     def __getitem__(self, idx):
-        annotation = self.annotations[str(idx)]
-        pprint(annotation)
-        return annotation
+        path = self.annotations[str(idx)]['image_path']
+        labels = self.annotations[str(idx)]['joints']
+
+        image = imread(path).astype(np.float32)
+        x, y, visibility = to_numpy(labels)
+
+        if self.transformer is not None:
+            image = self.transformer(image, x, y, visibility)
+
+        return image, labels
 
     def generate_annotations(self):
         n_joints = 16
@@ -58,13 +72,18 @@ class MPII(Dataset):
                                         joints[str(p)] = (-1, -1, 0)
 
                                 data[i] = {'image_path': image_path,
-                                           'joints': joints,
-                                           'flag': self.flag}
+                                           'joints': joints}
                                 i += 1
 
         with open(self.annotations_path, 'w') as out_file:
             json.dump(data, out_file)
 
 
-mpii = MPII('../data/MPII')
-data = mpii[0]
+transformer = ImageTransformer(0.3, 0.6)
+mpii = MPII('../data/MPII', transformer)
+image, labels = mpii[0]
+
+image = image.astype(np.uint8)
+
+imshow(image)
+plt.show()
