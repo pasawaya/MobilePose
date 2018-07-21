@@ -72,7 +72,8 @@ def main(args):
     loader_args = {'num_workers': 1, 'pin_memory': True} if 'cuda' in device_name else {}
 
     mpii_root = 'data/MPII'
-    train_transformer = ImageTransformer()
+    mean, std = np.load(os.path.join(mpii_root, 'means.npy'))
+    train_transformer = ImageTransformer(mean=mean, std=std)
     valid_transformer = ImageTransformer(p_scale=0.0, p_flip=0.0, p_rotate=0.0)
 
     train_dataset = MPII(root=mpii_root, transformer=train_transformer, output_size=args.resolution, train=True)
