@@ -6,16 +6,20 @@ import torch
 
 
 class ImageTransformer(object):
-    def __init__(self, output_size=256,
+    def __init__(self, output_size=256, r_pad=3.,
+                 p_scale=1.0, p_flip=0.5, p_rotate=1.0,
                  min_scale=0.7, max_scale=1.3,
-                 max_degree=30,
+                 max_degree=20,
                  min_jitter=0.8, max_jitter=1.2,
-                 mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5),
-                 r_pad=3.):
+                 mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)):
 
         self.output_size = output_size
         self.mean = mean
         self.std = std
+
+        self.p_scale = p_scale
+        self.p_flip = p_flip
+        self.p_rotate = p_rotate
 
         self.max_degree = max_degree
         self.min_scale = min_scale
@@ -30,12 +34,19 @@ class ImageTransformer(object):
         y_min, y_max = max(0, np.amin(y) - self.pad), min(image.shape[0] - 1, np.amax(y) + self.pad)
         bbox = np.array([x_min, y_min, x_max, y_max]).astype(np.int32)
 
-        f_xy = self.min_scale + (self.max_scale - self.min_scale) * random()
-        image, bbox, x, y = self.scale(image, bbox, x, y, f_xy)
-        image, bbox, x, y = self.flip(image, bbox, x, y)
-        angle = -self.max_degree + 2 * self.max_degree * random()
+        if random() < self.p_scale:
+            f_xy = self.min_scale + (self.max_scale - self.min_scale) * random()
+            image, bbox, x, y = self.scale(image, bbox, x, y, f_xy)
+
+        if random() < self.p_flip:
+            image, bbox, x, y = self.flip(image, bbox, x, y)
+
         image, x, y = self.crop(image, bbox, x, y, self.output_size)
-        image, bbox, x, y = self.rotate(image, bbox, x, y, angle)
+
+        if random() < self.p_rotate:
+            angle = -self.max_degree + 2 * self.max_degree * random()
+            image, bbox, x, y = self.rotate(image, bbox, x, y, angle)
+
         image = self.color_jitter(image, self.min_jitter, self.max_jitter)
         return image, x, y, visibility
         # image = self.normalize(image, self.mean, self.std)
@@ -90,6 +101,10 @@ class ImageTransformer(object):
         cropped[y_min:y_max, x_min:x_max, :] = image
         x += x_min
         y += y_min
+
+        x = np.clip(x, x_min, x_max)
+        y = np.clip(y, y_min, y_max)
+
         return cropped, x.astype(np.int), y.astype(np.int)
 
     @staticmethod
@@ -104,7 +119,6 @@ class ImageTransformer(object):
         y = y * f_xy
         bbox = bbox * f_xy
 
-        # WRONG, don't clip, mark visibility 0
         x = np.clip(x, 0, w)
         y = np.clip(y, 0, h)
 
