@@ -30,8 +30,8 @@ class MPII(Dataset):
             self.annotations = json.load(data)
 
         n = len(self.annotations)
-        self.start_idx = 0 if train else np.floor(train_ratio * n)
-        self.size = np.floor(train_ratio * n) if train else n - self.start_idx
+        self.start_idx = 0 if train else int(np.floor(train_ratio * n))
+        self.size = int(np.floor(train_ratio * n)) if train else n - self.start_idx
 
     def __len__(self):
         return self.size
