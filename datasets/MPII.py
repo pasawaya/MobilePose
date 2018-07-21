@@ -13,10 +13,10 @@ from random import randint
 
 
 class MPII(Dataset):
-    def __init__(self, root, transformer=None, input_size=256, train=True):
+    def __init__(self, root, transformer=None, output_size=256, train=True):
         self.root = root
         self.train = train
-        self.input_size = input_size
+        self.output_size = output_size
         self.flag = int(train)
         self.transformer = transformer
 
@@ -41,7 +41,9 @@ class MPII(Dataset):
         if self.transformer is not None:
             image, x, y, visibility = self.transformer(image, x, y, visibility)
 
-        return image, x, y, visibility
+        label_map = compute_label_map(x, y, visibility, self.output_size)
+        center_map = compute_center_map(self.output_size)
+        return image, label_map, center_map, (x, y, visibility)
 
     def generate_annotations(self):
         n_joints = 16
@@ -95,5 +97,6 @@ transformer = ImageTransformer()
 mpii = MPII('../data/MPII', transformer)
 
 for _ in range(100):
-    image, x, y, vis = mpii[randint(0, len(mpii))]
+    image, label_map, meta = mpii[randint(0, len(mpii))]
+    x, y, vis = meta
     visualize_input(image, x, y, vis)
