@@ -15,10 +15,10 @@ class ImageTransformer(object):
         y_min, y_max = max(0, np.amin(y)), min(image.shape[0] - 1, np.amax(y))
         bbox = np.array([x_min, y_min, x_max, y_max]).astype(np.int32)
 
-        # Scale
         f_xy = self.min_scale + (self.max_scale - self.min_scale) * random()
         image, bbox, x, y = ImageTransformer.scale(image, bbox, x, y, f_xy)
-        return image
+        image, bbox, x, y = ImageTransformer.flip(image, bbox, x, y)
+        return image, x, y, visibility
 
     @staticmethod
     def scale(image, bbox, x, y, f_xy):
@@ -37,3 +37,23 @@ class ImageTransformer(object):
         y = np.clip(y, 0, h)
 
         return image, bbox.astype(np.int32), x.astype(np.int32), y.astype(np.int32)
+
+    @staticmethod
+    def flip(image, bbox, x, y):
+        image = np.fliplr(image).copy()
+
+        w = image.shape[1]
+        x_min, y_min, x_max, y_max = bbox
+        bbox = np.array([w - x_max, y_min, w - x_min, y_max])
+        x = w - x
+        x, y = ImageTransformer.swap_joints(x, y)
+        return image, bbox, x, y
+
+    @staticmethod
+    def swap_joints(x, y):
+        symmetric_joints = [[0, 5], [1, 4], [2, 3], [6, 11], [7, 10], [12, 13]]
+
+        for i, j in symmetric_joints:
+            x[i], x[j] = x[j].copy(), x[i].copy()
+            y[i], y[j] = y[j].copy(), y[i].copy()
+        return x, y

@@ -6,10 +6,10 @@ import json
 import numpy as np
 
 from utils.dataset_utils import *
-from skimage.io import imread, imshow
-from matplotlib import pyplot as plt
+from skimage.io import imread
 from scipy.io import loadmat
 from utils.augmentation import ImageTransformer
+from random import randint
 
 
 class MPII(Dataset):
@@ -39,9 +39,9 @@ class MPII(Dataset):
         x, y, visibility = to_numpy(labels)
 
         if self.transformer is not None:
-            image = self.transformer(image, x, y, visibility)
+            image, x, y, visibility = self.transformer(image, x, y, visibility)
 
-        return image, labels
+        return image, x, y, visibility
 
     def generate_annotations(self):
         n_joints = 16
@@ -60,14 +60,26 @@ class MPII(Dataset):
                     for annopoint in annopoints:
                         if len(annopoint) > 0:
                             points = annopoint['point'][0, 0]
-                            if 'is_visible' in str(points.dtype):
-                                ids = [str(p_id[0, 0]) for p_id in points['id'][0]]
+                            ids = [str(p_id[0, 0]) for p_id in points['id'][0]]
+                            if 'is_visible' in str(points.dtype) and len(ids) == n_joints:
                                 x = [int(p_x[0, 0]) for p_x in points['x'][0]]
                                 y = [int(p_y[0, 0]) for p_y in points['y'][0]]
                                 vis = [1 if p_vis else 0 for p_vis in points['is_visible'][0]]
-                                joints = {p_id: (p_x, p_y, p_vis) for p_id, p_x, p_y, p_vis in zip(ids, x, y, vis)}
 
-                                for p in range(n_joints):
+                                ignored = ['6', '7']   # Ignore pelvis and thorax
+                                shifted = ['14', '15']   # Indices to replace pelvis and thorax
+                                visible = ['8', '9']   # Head and neck indices to always set visible
+
+                                joints = {}
+                                for p_id, p_x, p_y, p_vis in zip(ids, x, y, vis):
+                                    if p_id in visible:
+                                        joints[p_id] = (p_x, p_y, 1)
+                                    elif p_id in shifted:
+                                        joints[str(int(p_id) - 8)] = (p_x, p_y, p_vis)
+                                    elif p_id not in ignored:
+                                        joints[p_id] = (p_x, p_y, p_vis)
+
+                                for p in range(n_joints - len(ignored)):
                                     if str(p) not in joints:
                                         joints[str(p)] = (-1, -1, 0)
 
@@ -79,11 +91,9 @@ class MPII(Dataset):
             json.dump(data, out_file)
 
 
-transformer = ImageTransformer(0.3, 0.6)
+transformer = ImageTransformer(0.5, 0.6)
 mpii = MPII('../data/MPII', transformer)
-image, labels = mpii[0]
 
-image = image.astype(np.uint8)
-
-imshow(image)
-plt.show()
+for _ in range(100):
+    image, x, y, vis = mpii[randint(0, len(mpii))]
+    visualize_input(image, x, y, vis)
