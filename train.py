@@ -34,12 +34,12 @@ def train(model, loader, criterion, optimizer, scheduler, device, summary=None):
             optimizer.step()
             scheduler.step()
 
-            loss_avg.update(loss)
+            loss_avg.update(loss.item())
             acc_avg.update(acc)
 
             if summary is not None:
                 summary.add_scalar_value('Train Accuracy', acc)
-                summary.add_scalar_value('Train Loss', loss)
+                summary.add_scalar_value('Train Loss', loss.item())
 
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
             t.update()
@@ -59,7 +59,7 @@ def validate(model, loader, criterion, device):
         loss = criterion(outputs, label_map)
         acc = accuracy(outputs, label_map)
 
-        loss_avg.update(loss)
+        loss_avg.update(loss.item())
         acc_avg.update(acc)
 
     return loss_avg(), acc_avg()
