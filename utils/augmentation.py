@@ -48,9 +48,8 @@ class ImageTransformer(object):
             image, bbox, x, y = self.rotate(image, bbox, x, y, angle)
 
         image = self.color_jitter(image, self.min_jitter, self.max_jitter)
-        return image, x, y, visibility
-        # image = self.normalize(image, self.mean, self.std)
-        # return self.to_torch(image), x, y, visibility
+        image = self.normalize(image, self.mean, self.std)
+        return self.to_torch(image), x, y, visibility
 
     @staticmethod
     def rotate(image, bbox, x, y, angle):

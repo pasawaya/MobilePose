@@ -9,7 +9,7 @@ from .modules.ResidualBlock import ResidualBlock
 
 
 class PretrainRecurrentStackedHourglass(nn.Module):
-    def __init__(self, depth, in_channels, hidden_channels, out_channels, device, T=10):
+    def __init__(self, in_channels, hidden_channels, out_channels, device, T=10, depth=4):
         super(PretrainRecurrentStackedHourglass, self).__init__()
 
         self.T = T
@@ -40,6 +40,7 @@ class PretrainRecurrentStackedHourglass(nn.Module):
 
         b_t_1 = b_1
         for t in range(self.T - 1):
+            x = torch.cat([x, b_t_1], dim=1)
             b_t = self.hg_t(x, b_t_1)
             beliefs.append(b_t)
             b_t_1 = b_t

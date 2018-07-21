@@ -1,6 +1,5 @@
 
 
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models.modules.ResidualBlock import ResidualBlock
@@ -35,5 +34,4 @@ class RecurrentHourglass(nn.Module):
         return out
 
     def forward(self, x, b_t_1):
-        x = torch.cat([x, b_t_1], dim=1)
         return self.recursive_forward(self.depth, x)
