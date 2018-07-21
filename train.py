@@ -10,56 +10,58 @@ from utils.evaluation import accuracy
 from models.RecurrentStackedHourglass import PretrainRecurrentStackedHourglass
 from utils.augmentation import ImageTransformer
 import torch
+from tqdm import tqdm
 from models.MSESequenceLoss import MSESequenceLoss
 
 
 def train(model, loader, criterion, optimizer, scheduler, device, summary=None):
-    epoch_loss = []
-    epoch_accs = []
+    loss_avg = RunningAverage()
+    acc_avg = RunningAverage()
 
     model.train()
-    for i, data in enumerate(loader):
-        print('\t[batch ' + str(i) + ']')
-        frames, label_map, centers, _ = data
+
+    with tqdm(total=len(loader)) as t:
+        for i, (frames, label_map, centers, _) in enumerate(loader):
+            frames, label_map, centers = frames.to(device), label_map.to(device), centers.to(device)
+
+            outputs = model(frames, centers)
+            loss = criterion(outputs, label_map)
+            acc = accuracy(outputs, label_map)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            scheduler.step()
+
+            loss_avg.update(loss)
+            acc_avg.update(acc)
+
+            if summary is not None:
+                summary.add_scalar_value('Train Accuracy', acc)
+                summary.add_scalar_value('Train Loss', loss)
+
+            t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
+            t.update()
+
+        return loss_avg(), acc_avg()
+
+
+def validate(model, loader, criterion, device):
+    loss_avg = RunningAverage()
+    acc_avg = RunningAverage()
+
+    model.eval()
+    for i, (frames, label_map, centers, _) in enumerate(loader):
         frames, label_map, centers = frames.to(device), label_map.to(device), centers.to(device)
 
         outputs = model(frames, centers)
         loss = criterion(outputs, label_map)
         acc = accuracy(outputs, label_map)
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        scheduler.step()
+        loss_avg.update(loss)
+        acc_avg.update(acc)
 
-        epoch_loss.append(loss.item())
-        epoch_accs.append(acc)
-
-        if summary is not None:
-            summary.add_scalar_value('Train Accuracy', acc)
-            summary.add_scalar_value('Train Loss', loss.item())
-
-    return np.mean(np.array(epoch_loss)), np.mean(np.array(epoch_accs))
-
-
-def validate(model, loader, criterion, device):
-    epoch_loss = []
-    epoch_accs = []
-
-    model.eval()
-    for i, data in enumerate(loader):
-        frames, label_map, centers, original = data
-        frames, label_map, centers, original = frames.to(device), label_map.to(device), centers.to(device), original.to(device)
-
-        outputs = model(frames, centers)
-
-        loss = criterion(outputs, label_map)
-        acc = accuracy(outputs, label_map)
-
-        epoch_loss.append(loss.item())
-        epoch_accs.append(acc)
-
-    return np.mean(np.array(epoch_loss)), np.mean(np.array(epoch_accs))
+    return loss_avg(), acc_avg()
 
 
 def main(args):
@@ -84,7 +86,7 @@ def main(args):
 
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.decay, momentum=0.9)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop_interval, gamma=args.lr_drop_factor)
-    criterion = MSESequenceLoss()
+    criterion = MSESequenceLoss().to(device)
 
     summary = None
     if args.use_tensorboard:
