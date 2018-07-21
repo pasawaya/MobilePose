@@ -33,12 +33,6 @@ class MPII(Dataset):
         self.start_idx = 0 if train else np.floor(train_ratio * n)
         self.size = self.start_idx if train else n - self.start_idx
 
-        mean_name = 'means.npy'
-        mean_path = os.path.join(self.root, mean_name)
-        if not os.path.isfile(mean_path) and train:
-            mean, std = self.compute_mean()
-            np.save(mean_path, np.array([mean, std]))
-
     def __len__(self):
         return self.size
 
@@ -102,18 +96,3 @@ class MPII(Dataset):
 
         with open(self.annotations_path, 'w') as out_file:
             json.dump(data, out_file)
-
-    def compute_mean(self):
-        mean, std = np.zeros(3, dtype=np.float), np.zeros(3, dtype=np.float)
-
-        for i in range(self.start_idx, self.start_idx + self.size):
-            print(i)
-            path = self.annotations[str(i)]['image_path']
-            im = imread(path)
-            im = np.moveaxis(im, 2, 0)
-            im = im.reshape(im.shape[0], -1)
-            mean += np.mean(im, axis=1)
-            std += np.std(im, axis=1)
-        mean = (mean / 255.) / float(len(self.annotations))
-        std = (std / 255.) / float(len(self.annotations))
-        return mean, std
