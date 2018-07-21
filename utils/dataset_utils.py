@@ -4,6 +4,7 @@ from skimage.draw import circle, line
 from skimage.io import imshow
 from matplotlib import pyplot as plt
 import torch
+import cv2
 
 
 def to_numpy(data):
@@ -36,7 +37,28 @@ def visualize_input(image, x, y, vis):
     plt.show()
 
 
-def compute_label_map(x, y, visibility, size, sigma, stride):
+def visualize_label_map(image, label_map):
+    label_map = label_map.numpy() * 255
+    label_map = np.sum(label_map, axis=1, dtype=np.uint8, keepdims=True)
+    label_map = np.repeat(np.moveaxis(label_map, 1, 3), 3, axis=3)
+    label_map = np.squeeze(label_map, 0)
+    label_map = cv2.resize(label_map, (image.shape[0], image.shape[1]))
+
+    image = cv2.addWeighted(image, 0.5, label_map, 0.5, 0)
+    imshow(image)
+    plt.show()
+
+
+def visualize_center_map(image, center_map):
+    center_map = center_map.numpy() * 255.
+    center_map = np.moveaxis(center_map, 0, 2).astype(np.uint8).copy()
+    center_map = np.repeat(center_map, 3, axis=2)
+    image = cv2.addWeighted(image, 0.5, center_map, 0.5, 0)
+    imshow(image)
+    plt.show()
+
+
+def compute_label_map(x, y, visibility, size, sigma=7, stride=8):
     if len(x.shape) < 2:
         x = np.expand_dims(x, 0)
         y = np.expand_dims(y, 0)
@@ -63,3 +85,18 @@ def compute_label_map(x, y, visibility, size, sigma, stride):
                 label = np.zeros((label_size, label_size))
             label_map[t, p, :, :] = label
     return torch.from_numpy(label_map).float()
+
+
+def compute_center_map(size, sigma=21):
+    shape = (size, size)
+    x, y = size / 2, size / 2
+    X, Y = np.meshgrid(np.linspace(0, shape[0], shape[0]), np.linspace(0, shape[1], shape[1]))
+    X = X - x
+    Y = Y - y
+    d2 = X * X + Y * Y
+    exp = d2 * 0.5 / sigma / sigma
+    center_map = np.exp(-exp)
+    center_map[center_map < 0.01] = 0
+    center_map[center_map > 1] = 1
+    center_map = np.expand_dims(center_map, axis=0)
+    return torch.from_numpy(center_map).float()

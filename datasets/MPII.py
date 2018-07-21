@@ -97,6 +97,8 @@ transformer = ImageTransformer()
 mpii = MPII('../data/MPII', transformer)
 
 for _ in range(100):
-    image, label_map, meta = mpii[randint(0, len(mpii))]
+    image, label_map, center_map, meta = mpii[randint(0, len(mpii))]
     x, y, vis = meta
-    visualize_input(image, x, y, vis)
+    # visualize_input(image, x, y, vis)
+    # visualize_center_map(image, center_map)
+    visualize_label_map(image, label_map)
