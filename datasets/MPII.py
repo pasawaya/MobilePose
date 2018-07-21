@@ -91,7 +91,7 @@ class MPII(Dataset):
             json.dump(data, out_file)
 
 
-transformer = ImageTransformer(0.5, 0.6)
+transformer = ImageTransformer()
 mpii = MPII('../data/MPII', transformer)
 
 for _ in range(100):
