@@ -4,6 +4,7 @@ from utils.train_utils import *
 import argparse
 import pycrayon
 import numpy as np
+from utils.dataset_utils import compute_mean
 import os
 from datasets.MPII import MPII
 from utils.evaluation import accuracy
@@ -72,7 +73,13 @@ def main(args):
     loader_args = {'num_workers': 1, 'pin_memory': True} if 'cuda' in device_name else {}
 
     mpii_root = 'data/MPII'
-    train_dataset = MPII(root=mpii_root, output_size=args.resolution, train=True)
+    mean_name = 'means.npy'
+    mean_path = os.path.join(mpii_root, mean_name)
+    if not os.path.isfile(mean_path):
+        mpii = MPII(root=mpii_root, transformer=None, output_size=args.resolution, train=True)
+        mean, std = compute_mean(mpii)
+        np.save(mean_path, np.array([mean, std]))
+
     mean, std = np.load(os.path.join(mpii_root, 'means.npy'))
     train_transformer = ImageTransformer(mean=mean, std=std)
     valid_transformer = ImageTransformer(p_scale=0.0, p_flip=0.0, p_rotate=0.0)
