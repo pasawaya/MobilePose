@@ -12,7 +12,7 @@ def compute_mean(dataset):
 
     for i in range(len(dataset)):
         print(i)
-        image, _, _, _ = dataset[i]
+        im, _, _, _ = dataset[i]
         im = np.moveaxis(im, 2, 0)
         im = im.reshape(im.shape[0], -1)
         mean += np.mean(im, axis=1)
