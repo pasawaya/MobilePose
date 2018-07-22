@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from models.modules.ResidualBlock import ResidualBlock
 from models.modules.ConvGRU import ConvGRU
+from utils.train_utils import initialize_weights_kaiming
 
 
 class RecurrentHourglass(nn.Module):
@@ -18,6 +19,7 @@ class RecurrentHourglass(nn.Module):
                                     ConvGRU(hidden_channels, hidden_channels, 3, 1, device),
                                     ResidualBlock(hidden_channels, out_channels)])]
         self.layers = nn.ModuleList(layers + top_layer)
+        self.apply(initialize_weights_kaiming)
 
     def recursive_forward(self, layer, x):
         x = F.max_pool2d(x, 2)

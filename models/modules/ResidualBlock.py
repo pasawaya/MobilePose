@@ -1,6 +1,7 @@
 
 import torch.nn as nn
 import torch.nn.functional as F
+from utils.train_utils import initialize_weights_kaiming
 
 
 class ResidualBlock(nn.Module):
@@ -19,6 +20,8 @@ class ResidualBlock(nn.Module):
         self.downsample = None
         if in_channels != out_channels:
             self.downsample = nn.Conv2d(in_channels, out_channels, 1, 1)
+
+        self.apply(initialize_weights_kaiming)
 
     def forward(self, x):
         residual = x

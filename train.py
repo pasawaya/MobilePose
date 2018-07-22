@@ -86,7 +86,7 @@ def main(args):
 
     mean, std = np.load(os.path.join(mpii_root, 'means.npy'))
     train_transformer = ImageTransformer(mean=mean, std=std)
-    valid_transformer = ImageTransformer(p_scale=0.0, p_flip=0.0, p_rotate=0.0)
+    valid_transformer = ImageTransformer(p_scale=0.0, p_flip=0.0, p_rotate=0.0, mean=mean, std=std)
 
     train_dataset = MPII(root=mpii_root, transformer=train_transformer, output_size=args.resolution, train=True,
                          subset_size=args.subset_size)
