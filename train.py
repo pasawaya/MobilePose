@@ -119,13 +119,11 @@ def main(args):
             summary.add_scalar_value('Epoch Valid Loss', checkpoint['loss'])
 
     for epoch in range(start_epoch, args.max_epochs):
-        print('[epoch ' + str(epoch) + ']')
+        print('\n[epoch ' + str(epoch) + ']')
         train_loss, train_acc = train(model, train_loader, criterion, optimizer, scheduler, device, summary)
         valid_loss, valid_acc = validate(model, valid_loader, criterion, device)
 
         if args.use_tensorboard:
-            print(train_loss)
-            print(valid_loss)
             summary.add_scalar_value('Epoch Train Loss', train_loss)
             summary.add_scalar_value('Epoch Valid Loss', valid_loss)
             summary.add_scalar_value('Epoch Train Accuracy', train_acc)
