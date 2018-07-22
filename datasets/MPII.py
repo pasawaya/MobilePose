@@ -13,7 +13,7 @@ train_ratio = 0.95
 
 
 class MPII(Dataset):
-    def __init__(self, root='data/MPII', transformer=None, output_size=256, train=True):
+    def __init__(self, root='data/MPII', transformer=None, output_size=256, train=True, subset_size=None):
         self.root = root
         self.train = train
         self.output_size = output_size
@@ -32,6 +32,9 @@ class MPII(Dataset):
         n = len(self.annotations)
         self.start_idx = 0 if train else int(np.floor(train_ratio * n))
         self.size = int(np.floor(train_ratio * n)) if train else n - self.start_idx
+
+        if subset_size is not None:
+            self.size = subset_size
 
     def __len__(self):
         return self.size

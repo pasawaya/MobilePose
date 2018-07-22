@@ -24,7 +24,7 @@ def accuracy(inputs, targets, r=0.2):
         curr_preds = get_preds(inputs[i])
 
         scores = torch.norm(curr_preds.sub(curr_gt), dim=2).view(-1)
-        n_correct += (scores <= threshold).sum()
+        n_correct += scores.le(threshold).sum()
 
     return float(n_correct) / float(n_total)
 
