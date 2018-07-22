@@ -87,8 +87,10 @@ def main(args):
     train_transformer = ImageTransformer(mean=mean, std=std)
     valid_transformer = ImageTransformer(p_scale=0.0, p_flip=0.0, p_rotate=0.0)
 
-    train_dataset = MPII(root=mpii_root, transformer=train_transformer, output_size=args.resolution, train=True)
-    valid_dataset = MPII(root=mpii_root, transformer=valid_transformer, output_size=args.resolution, train=False)
+    train_dataset = MPII(root=mpii_root, transformer=train_transformer, output_size=args.resolution, train=True,
+                         subset_size=args.subset_size)
+    valid_dataset = MPII(root=mpii_root, transformer=valid_transformer, output_size=args.resolution, train=False,
+                         subset_size=args.subset_size)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, **loader_args)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=args.batch_size, shuffle=False, **loader_args)
@@ -153,6 +155,7 @@ if __name__ == '__main__':
     parser.add_argument('--decay', default=5e-3, type=float)
     parser.add_argument('--max_epochs', default=5000, type=int)
     parser.add_argument('--resolution', default=256, type=int)
+    parser.add_argument('--subset_size', default=None, type=int)
 
     parser.add_argument('--tensorboard', dest='use_tensorboard', action='store_true')
     parser.add_argument('--resume', dest='resume', action='store_true')
