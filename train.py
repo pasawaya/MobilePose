@@ -104,8 +104,8 @@ def main(args):
     criterion = MSESequenceLoss().to(device)
 
     summary = None
-    if args.use_tensorboard:
-        cc = pycrayon.CrayonClient(hostname=args.host, port=args.port)
+    if args.host is not None:
+        cc = pycrayon.CrayonClient(hostname=args.host)
 
         if args.experiment in cc.get_experiment_names():
             summary = cc.open_experiment(args.experiment)
@@ -121,7 +121,7 @@ def main(args):
         model.load_state_dict(checkpoint['state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         best_acc = checkpoint['accuracy']
-        if args.use_tensorboard:
+        if args.host is not None:
             summary.add_scalar_value('Epoch Valid Accuracy', checkpoint['accuracy'])
             summary.add_scalar_value('Epoch Valid Loss', checkpoint['loss'])
 
@@ -130,7 +130,7 @@ def main(args):
         train_loss, train_acc = train(model, train_loader, criterion, optimizer, scheduler, device, args.clip, summary)
         valid_loss, valid_acc = validate(model, valid_loader, criterion, device)
 
-        if args.use_tensorboard:
+        if args.host is not None:
             summary.add_scalar_value('Epoch Train Loss', train_loss)
             summary.add_scalar_value('Epoch Valid Loss', valid_loss)
             summary.add_scalar_value('Epoch Train Accuracy', train_acc)
@@ -163,10 +163,8 @@ if __name__ == '__main__':
     parser.add_argument('--subset_size', default=None, type=int)
     parser.add_argument('--clip', default=None, type=int)
 
-    parser.add_argument('--tensorboard', dest='use_tensorboard', action='store_true')
     parser.add_argument('--experiment', default='Recurrent Stacked Hourglass Training', type=str)
-    parser.add_argument('--port', default=8889, type=int)
-    parser.add_argument('--host', default='localhost', type=str)
+    parser.add_argument('--host', default=None, type=str)
     parser.add_argument('--resume', dest='resume', action='store_true')
     parser.add_argument('--device', default='cpu', type=str, choices=['cpu', '0', '1'])
     main(parser.parse_args())
