@@ -43,7 +43,8 @@ def train(model, loader, criterion, optimizer, scheduler, device, summary=None):
                 summary.add_scalar_value('Train Accuracy', acc)
                 summary.add_scalar_value('Train Loss', loss.item())
 
-            t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
+            t.set_postfix(loss='{:05.3f}'.format(loss.item()), acc='{:05.3f}'.format(acc),
+                          loss_avg='{:05.3f}'.format(loss_avg()), acc_avg='{:05.3f}'.format(acc_avg()))
             t.update()
 
         return loss_avg(), acc_avg()
