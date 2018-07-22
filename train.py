@@ -4,7 +4,7 @@ from utils.train_utils import *
 import argparse
 import pycrayon
 import numpy as np
-from utils.dataset_utils import compute_mean
+from utils.dataset_utils import *
 import torch.nn.utils as utils
 import os
 from datasets.MPII import MPII

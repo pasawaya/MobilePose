@@ -13,33 +13,34 @@ def accuracy(inputs, targets, r=0.2):
     n_correct = 0
     n_total = batch_size * n_stages * n_joints
 
-    for i in range(batch_size):
-        gt = to_coordinates(torch.squeeze(targets[i], 0))
+    gt = get_preds(torch.squeeze(targets, 1))
 
-        w = gt[:, 0].max() - gt[:, 0].min()
-        h = gt[:, 1].max() - gt[:, 1].min()
+    for i in range(batch_size):
+        w = gt[i, :, 0].max() - gt[i, :, 0].min()
+        h = gt[i, :, 1].max() - gt[i, :, 1].min()
         threshold = r * max(w, h)
 
-        # For each stage in the example...
-        for j in range(n_stages):
-            predictions = to_coordinates(inputs[i, j])
-            score = torch.norm(predictions.sub(gt), 2, dim=1)
-            n_correct += (score <= threshold).sum()
+        curr_gt = torch.unsqueeze(gt[i], 0).repeat(n_stages, 1, 1)
+        curr_preds = get_preds(inputs[i])
+
+        scores = torch.norm(curr_preds.sub(curr_gt), dim=2).view(-1)
+        n_correct += (scores <= threshold).sum()
 
     return float(n_correct) / float(n_total)
 
 
-# Get x, y coordinates of joint predictions from heatmap
-def to_coordinates(inputs):
-    maxes, indices = torch.max(inputs.view(inputs.size(0), -1), 1)
-    maxes = maxes.view(inputs.size(0), 1)
-    indices = indices.view(inputs.size(0), 1)
+# Source: https://github.com/bearpaw/pytorch-pose/blob/master/pose/utils/evaluation.py
+def get_preds(scores):
+    maxval, idx = torch.max(scores.view(scores.size(0), scores.size(1), -1), 2)
 
-    predictions = indices.repeat(1, 2).float()
+    maxval = maxval.view(scores.size(0), scores.size(1), 1)
+    idx = idx.view(scores.size(0), scores.size(1), 1) + 1
 
-    predictions[:, 0] = predictions[:, 0] % inputs.size(2)
-    predictions[:, 1] = torch.floor((predictions[:, 1]) / inputs.size(2))
+    preds = idx.repeat(1, 1, 2).float()
 
-    pred_mask = maxes.gt(0).repeat(1, 2).float()
-    predictions *= pred_mask
-    return predictions
+    preds[:,:,0] = (preds[:,:,0] - 1) % scores.size(3) + 1
+    preds[:,:,1] = torch.floor((preds[:,:,1] - 1) / scores.size(3)) + 1
+
+    pred_mask = maxval.gt(0).repeat(1, 1, 2).float()
+    preds *= pred_mask
+    return preds
