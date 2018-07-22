@@ -157,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr_drop_interval', default=100000, type=int)
     parser.add_argument('--lr_drop_factor', default=0.333, type=float)
     parser.add_argument('--batch_size', default=4, type=int)
-    parser.add_argument('--decay', default=5e-3, type=float)
+    parser.add_argument('--decay', default=0, type=float)
     parser.add_argument('--max_epochs', default=5000, type=int)
     parser.add_argument('--resolution', default=256, type=int)
     parser.add_argument('--subset_size', default=None, type=int)
