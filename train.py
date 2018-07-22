@@ -16,7 +16,7 @@ from tqdm import tqdm
 from models.MSESequenceLoss import MSESequenceLoss
 
 
-def train(model, loader, criterion, optimizer, scheduler, device, summary=None):
+def train(model, loader, criterion, optimizer, scheduler, device, clip=None, summary=None):
     loss_avg = RunningAverage()
     acc_avg = RunningAverage()
 
@@ -32,7 +32,8 @@ def train(model, loader, criterion, optimizer, scheduler, device, summary=None):
 
             optimizer.zero_grad()
             loss.backward()
-            utils.clip_grad_value_(model.parameters(), 100)
+            if clip is not None:
+                utils.clip_grad_value_(model.parameters(), clip)
             optimizer.step()
             scheduler.step()
 
@@ -122,7 +123,7 @@ def main(args):
 
     for epoch in range(start_epoch, args.max_epochs):
         print('\n[epoch ' + str(epoch) + ']')
-        train_loss, train_acc = train(model, train_loader, criterion, optimizer, scheduler, device, summary)
+        train_loss, train_acc = train(model, train_loader, criterion, optimizer, scheduler, device, args.clip, summary)
         valid_loss, valid_acc = validate(model, valid_loader, criterion, device)
 
         if args.use_tensorboard:
@@ -156,6 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_epochs', default=5000, type=int)
     parser.add_argument('--resolution', default=256, type=int)
     parser.add_argument('--subset_size', default=None, type=int)
+    parser.add_argument('--clip', default=None, type=int)
 
     parser.add_argument('--tensorboard', dest='use_tensorboard', action='store_true')
     parser.add_argument('--resume', dest='resume', action='store_true')
