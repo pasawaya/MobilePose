@@ -3,6 +3,7 @@ import numpy as np
 from skimage.draw import circle, line
 from skimage.io import imshow
 from matplotlib import pyplot as plt
+from .evaluation import *
 import torch
 import cv2
 
@@ -71,6 +72,30 @@ def visualize_center_map(image, center_map):
     image = cv2.addWeighted(image, 0.5, center_map, 0.5, 0)
     imshow(image)
     plt.show()
+
+
+def visualize_truth(video, labels):
+    video = video.detach().numpy().copy().astype(np.uint8)
+    video = np.moveaxis(video, 1, 3)
+
+    labels = labels.detach()
+    labels = torch.squeeze(labels, 1)
+    coords = get_preds(labels) * (256. / 64.)
+
+    size = video.shape[-2]
+    for t in range(video.shape[0]):
+        frame = video[t].copy()
+
+        heatmap = torch.squeeze(labels[t], 0).numpy() * 255.
+        heatmap = np.sum(heatmap, axis=0)
+        heatmap = np.clip(heatmap, 0, 255).astype(np.uint8)
+        heatmap = cv2.cvtColor(heatmap, cv2.COLOR_GRAY2RGB)
+        heatmap = cv2.resize(heatmap, (size, size))
+        frame = cv2.addWeighted(frame, 0.5, heatmap, 0.5, 0)
+        for (x, y) in coords[t]:
+            cv2.circle(frame, (x, y), 2, (0, 255, 0))
+        imshow(frame)
+        plt.show()
 
 
 def compute_label_map(x, y, visibility, size=256, sigma=7, stride=4):
