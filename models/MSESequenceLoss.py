@@ -1,5 +1,6 @@
 
 import torch.nn as nn
+import torch
 
 
 class MSESequenceLoss(nn.Module):
@@ -8,16 +9,9 @@ class MSESequenceLoss(nn.Module):
         self.criterion = nn.MSELoss(size_average=True)
 
     def forward(self, inputs, targets):
-        return self.criterion
-
         batch_size = inputs.shape[0]
         T = inputs.shape[1]
         if targets.shape[1] != T:
             targets = targets.repeat(1, T, 1, 1, 1)
 
-        return self.criterion(inputs, targets)
-        # losses = []
-        # for i in range(batch_size):
-        #     for t in range(T):
-        #         losses.append(self.criterion(inputs[i, t], targets[i, t]))
-        # return sum(losses) / (batch_size * T)
+        return torch.mean(inputs.sub(targets) ** 2)
