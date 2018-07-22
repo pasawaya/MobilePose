@@ -105,7 +105,7 @@ def main(args):
 
     summary = None
     if args.use_tensorboard:
-        cc = pycrayon.CrayonClient(hostname='localhost')
+        cc = pycrayon.CrayonClient(hostname=args.host, port=args.port)
         summary = cc.create_experiment('Recurrent Stacked Hourglass Training')
 
     best_acc = 0.
@@ -160,6 +160,8 @@ if __name__ == '__main__':
     parser.add_argument('--clip', default=None, type=int)
 
     parser.add_argument('--tensorboard', dest='use_tensorboard', action='store_true')
+    parser.add_argument('--port', default=8888, type=int)
+    parser.add_argument('--host', default='localhost', type=str)
     parser.add_argument('--resume', dest='resume', action='store_true')
     parser.add_argument('--device', default='cpu', type=str, choices=['cpu', '0', '1'])
     main(parser.parse_args())
