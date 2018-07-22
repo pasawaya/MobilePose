@@ -99,7 +99,7 @@ def main(args):
     model = PretrainRecurrentStackedHourglass(3, 64, train_dataset.n_joints + 1, device, T=args.t, depth=args.depth)
     model = model.to(device)
 
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.decay, momentum=0.9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.decay)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop_interval, gamma=args.lr_drop_factor)
     criterion = MSESequenceLoss().to(device)
 
