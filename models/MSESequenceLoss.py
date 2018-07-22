@@ -5,7 +5,7 @@ import torch.nn as nn
 class MSESequenceLoss(nn.Module):
     def __init__(self):
         super(MSESequenceLoss, self).__init__()
-        self.criterion = nn.MSELoss(size_average=True)
+        self.criterion = nn.MSELoss(size_average=False)
 
     def forward(self, inputs, targets):
         T = inputs.shape[1]
