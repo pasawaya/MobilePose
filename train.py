@@ -165,7 +165,7 @@ if __name__ == '__main__':
     parser.add_argument('--tensorboard', dest='use_tensorboard', action='store_true')
     parser.add_argument('--experiment', default='Recurrent Stacked Hourglass Training', type=str)
     parser.add_argument('--identifier', default=None, type=str)
-    parser.add_argument('--port', default=8888, type=int)
+    parser.add_argument('--port', default=8889, type=int)
     parser.add_argument('--host', default='localhost', type=str)
     parser.add_argument('--resume', dest='resume', action='store_true')
     parser.add_argument('--device', default='cpu', type=str, choices=['cpu', '0', '1'])
