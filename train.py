@@ -97,8 +97,7 @@ def main(args):
 
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.decay, momentum=0.9)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop_interval, gamma=args.lr_drop_factor)
-    # criterion = MSESequenceLoss().to(device)
-    criterion = nn.MSELoss()
+    criterion = MSESequenceLoss().to(device)
 
     summary = None
     if args.use_tensorboard:
