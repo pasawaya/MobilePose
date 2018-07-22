@@ -5,6 +5,7 @@ import argparse
 import pycrayon
 import numpy as np
 from utils.dataset_utils import compute_mean
+import torch.nn.utils as utils
 import os
 from datasets.MPII import MPII
 from utils.evaluation import accuracy
@@ -31,6 +32,7 @@ def train(model, loader, criterion, optimizer, scheduler, device, summary=None):
 
             optimizer.zero_grad()
             loss.backward()
+            utils.clip_grad_value_(model.parameters(), 100)
             optimizer.step()
             scheduler.step()
 
@@ -95,7 +97,8 @@ def main(args):
 
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.decay, momentum=0.9)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop_interval, gamma=args.lr_drop_factor)
-    criterion = MSESequenceLoss().to(device)
+    # criterion = MSESequenceLoss().to(device)
+    criterion = nn.MSELoss()
 
     summary = None
     if args.use_tensorboard:
