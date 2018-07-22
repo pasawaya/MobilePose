@@ -152,6 +152,7 @@ class ImageTransformer(object):
 
     @staticmethod
     def normalize(image, mean, std):
+        image = image / 255.
         image[:, :, 0] = (image[:, :, 0] - mean[0]) / (std[0] + 1e-8)
         image[:, :, 1] = (image[:, :, 1] - mean[1]) / (std[1] + 1e-8)
         image[:, :, 2] = (image[:, :, 2] - mean[2]) / (std[2] + 1e-8)
