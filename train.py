@@ -106,6 +106,7 @@ def main(args):
     summary = None
     if args.use_tensorboard:
         cc = pycrayon.CrayonClient(hostname=args.host, port=args.port)
+
         if args.experiment in cc.get_experiment_names():
             summary = cc.open_experiment(args.experiment)
         else:
@@ -121,8 +122,8 @@ def main(args):
         optimizer.load_state_dict(checkpoint['optimizer'])
         best_acc = checkpoint['accuracy']
         if args.use_tensorboard:
-            summary.add_scalar_value(args.id + ' Epoch Valid Accuracy', checkpoint['accuracy'])
-            summary.add_scalar_value(args.id + ' Epoch Valid Loss', checkpoint['loss'])
+            summary.add_scalar_value('Epoch Valid Accuracy', checkpoint['accuracy'])
+            summary.add_scalar_value('Epoch Valid Loss', checkpoint['loss'])
 
     for epoch in range(start_epoch, args.max_epochs):
         print('\n[epoch ' + str(epoch) + ']')
@@ -130,11 +131,11 @@ def main(args):
         valid_loss, valid_acc = validate(model, valid_loader, criterion, device)
 
         if args.use_tensorboard:
-            summary.add_scalar_value(args.id + ' Epoch Train Loss', train_loss)
-            summary.add_scalar_value(args.id + ' Epoch Valid Loss', valid_loss)
-            summary.add_scalar_value(args.id + ' Epoch Train Accuracy', train_acc)
-            summary.add_scalar_value(args.id + ' Epoch Valid Accuracy', valid_acc)
-            summary.add_scalar_value(args.id + ' Learning Rate', scheduler.get_lr()[0])
+            summary.add_scalar_value('Epoch Train Loss', train_loss)
+            summary.add_scalar_value('Epoch Valid Loss', valid_loss)
+            summary.add_scalar_value('Epoch Train Accuracy', train_acc)
+            summary.add_scalar_value('Epoch Valid Accuracy', valid_acc)
+            summary.add_scalar_value('Learning Rate', scheduler.get_lr()[0])
 
         if valid_acc >= best_acc:
             best_acc = valid_acc
@@ -164,7 +165,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--tensorboard', dest='use_tensorboard', action='store_true')
     parser.add_argument('--experiment', default='Recurrent Stacked Hourglass Training', type=str)
-    parser.add_argument('--identifier', default=None, type=str)
     parser.add_argument('--port', default=8889, type=int)
     parser.add_argument('--host', default='localhost', type=str)
     parser.add_argument('--resume', dest='resume', action='store_true')
