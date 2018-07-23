@@ -15,7 +15,6 @@ from utils.dataset_utils import *
 from utils.evaluation import accuracy
 
 from models.RecurrentStackedHourglass import PretrainRecurrentStackedHourglass
-from models.RSHDeploy import RecurrentStackedHourglass
 from models.modules.ResidualBlock import ResidualBlock
 from models.modules.InvertedResidualBlock import InvertedResidualBlock
 from models.modules.ConvolutionalBlock import ConvolutionalBlock
@@ -136,10 +135,6 @@ def main(args):
             summary.add_scalar_value('Epoch Valid Accuracy', checkpoint['accuracy'])
             summary.add_scalar_value('Epoch Valid Loss', checkpoint['loss'])
 
-    if args.coreml_name is not None:
-        dummy_input = torch.FloatTensor(1, 3, 256, 256)
-        save_coreml(model, dummy_input, args.coreml_name)
-
     for epoch in range(start_epoch, args.max_epochs):
         print('\n[epoch ' + str(epoch) + ']')
         train_loss, train_acc = train(model, train_loader, criterion, optimizer, scheduler, device, args.clip, summary)
@@ -188,6 +183,5 @@ if __name__ == '__main__':
     # Other
     parser.add_argument('--resume', dest='resume', action='store_true')
     parser.add_argument('--device', default='cpu', type=str, choices=['cpu', '0', '1'])
-    parser.add_argument('--coreml_name', default=None, type=str)
 
     main(parser.parse_args())
