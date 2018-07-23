@@ -14,6 +14,14 @@ def initialize_weights_kaiming(layer):
         layer.bias.data.fill_(0.0)
 
 
+def num_parameters(model):
+    return sum(p.numel() for p in model.parameters())
+
+
+def num_trainable_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
 class RunningAverage():
     def __init__(self):
         self.steps = 0
