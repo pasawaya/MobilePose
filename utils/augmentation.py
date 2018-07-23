@@ -29,10 +29,11 @@ class ImageTransformer(object):
 
         self.pad = self.output_size / r_pad
 
-    def __call__(self, image, x, y, visibility):
-        x_min, x_max = max(0, np.amin(x) - self.pad), min(image.shape[1] - 1, np.amax(x) + self.pad)
-        y_min, y_max = max(0, np.amin(y) - self.pad), min(image.shape[0] - 1, np.amax(y) + self.pad)
-        bbox = np.array([x_min, y_min, x_max, y_max]).astype(np.int32)
+    def __call__(self, image, x, y, visibility, bbox=None):
+        if bbox is None:
+            x_min, x_max = max(0, np.amin(x) - self.pad), min(image.shape[1] - 1, np.amax(x) + self.pad)
+            y_min, y_max = max(0, np.amin(y) - self.pad), min(image.shape[0] - 1, np.amax(y) + self.pad)
+            bbox = np.array([x_min, y_min, x_max, y_max]).astype(np.int32)
 
         if random() < self.p_scale:
             f_xy = self.min_scale + (self.max_scale - self.min_scale) * random()
