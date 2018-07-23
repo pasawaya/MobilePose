@@ -1,25 +1,27 @@
 
-from torch.utils.data import DataLoader
-from utils.train_utils import *
 import argparse
 import pycrayon
-from utils.dataset_utils import *
-import torch.nn.utils as utils
 import os
+import torch.nn.utils as utils
+from tqdm import tqdm
 from datasets.MPII import MPII
-from utils.evaluation import accuracy
-from models.RecurrentStackedHourglass import PretrainRecurrentStackedHourglass
-from models.RSHDeploy import RecurrentStackedHourglass
-from utils.augmentation import ImageTransformer
+from onnx_coreml import convert
+
 import torch
 import torch.onnx
-from tqdm import tqdm
-from models.MSESequenceLoss import MSESequenceLoss
-from models.modules.ConvolutionalBlock import ConvolutionalBlock
-from onnx_coreml import convert
+from torch.utils.data import DataLoader
+
+from utils.train_utils import *
+from utils.augmentation import ImageTransformer
+from utils.dataset_utils import *
+from utils.evaluation import accuracy
+
+from models.RecurrentStackedHourglass import PretrainRecurrentStackedHourglass
+from models.RSHDeploy import RecurrentStackedHourglass
 from models.modules.ResidualBlock import ResidualBlock
 from models.modules.InvertedResidualBlock import InvertedResidualBlock
 from models.modules.ConvolutionalBlock import ConvolutionalBlock
+from models.MSESequenceLoss import MSESequenceLoss
 
 
 def train(model, loader, criterion, optimizer, scheduler, device, clip=None, summary=None):
