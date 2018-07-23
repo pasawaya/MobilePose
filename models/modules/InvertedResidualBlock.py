@@ -3,6 +3,7 @@
 # Implementation of the inverted residual block heavily used in the MobileNetV2 model
 
 import torch.nn as nn
+from utils.train_utils import initialize_weights_kaiming
 
 
 class InvertedResidualBlock(nn.Module):
@@ -24,6 +25,8 @@ class InvertedResidualBlock(nn.Module):
             nn.Conv2d(in_channels * scale, out_channels, 1, 1, 0, bias=False),
             nn.BatchNorm2d(out_channels),
         )
+
+        self.apply(initialize_weights_kaiming)
 
     def forward(self, x):
         if self.use_res_connect:
