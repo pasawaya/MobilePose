@@ -5,12 +5,12 @@
 import torch.nn as nn
 
 
-class InvertedResidual(nn.Module):
+class InvertedResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
-        super(InvertedResidual, self).__init__()
+        super(InvertedResidualBlock, self).__init__()
         scale = 2
 
-        self.use_res_connect = self.stride == 1 and in_channels == out_channels
+        self.use_res_connect = in_channels == out_channels
 
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, in_channels * scale, 1, 1, 0, bias=False),
