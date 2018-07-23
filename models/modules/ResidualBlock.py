@@ -11,11 +11,11 @@ class ResidualBlock(nn.Module):
         hidden_channels = int(out_channels / 2.)
 
         self.bn1 = nn.BatchNorm2d(in_channels)
-        self.conv1 = nn.Conv2d(in_channels, hidden_channels, 1, bias=True)
+        self.conv1 = nn.Conv2d(in_channels, hidden_channels, 1, bias=False)
         self.bn2 = nn.BatchNorm2d(hidden_channels)
-        self.conv2 = nn.Conv2d(hidden_channels, hidden_channels, 3, 1, 1, bias=True)
+        self.conv2 = nn.Conv2d(hidden_channels, hidden_channels, 3, 1, 1, bias=False)
         self.bn3 = nn.BatchNorm2d(hidden_channels)
-        self.conv3 = nn.Conv2d(hidden_channels, out_channels, 1, bias=True)
+        self.conv3 = nn.Conv2d(hidden_channels, out_channels, 1, bias=False)
 
         self.downsample = None
         if in_channels != out_channels:
