@@ -39,11 +39,10 @@ class PretrainRecurrentStackedHourglass(nn.Module):
 
         beliefs = [b_1]
         b_t_1 = b_1
-        
+
         for t in range(self.T):
             x_t = torch.cat([x, b_t_1, centers], dim=1)
             b_t = self.hg_t(x_t)
-            print(b_t.shape)
             beliefs.append(b_t)
             b_t_1 = b_t
 
