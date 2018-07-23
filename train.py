@@ -38,7 +38,7 @@ def train(model, loader, criterion, optimizer, scheduler, device, clip=None, sum
             optimizer.zero_grad()
             loss.backward()
             if clip is not None:
-                utils.clip_grad_value_(model.parameters(), clip)
+                utils.clip_grad_norm_(model.parameters(), clip)
             optimizer.step()
             scheduler.step()
 
@@ -174,7 +174,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_epochs', default=5000, type=int)
     parser.add_argument('--resolution', default=256, type=int)
     parser.add_argument('--subset_size', default=None, type=int)
-    parser.add_argument('--clip', default=None, type=int)
+    parser.add_argument('--clip', default=None, type=float)
 
     # Tensorboard
     parser.add_argument('--experiment', default='Recurrent Stacked Hourglass Training', type=str)
