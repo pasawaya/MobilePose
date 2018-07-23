@@ -139,17 +139,8 @@ def main(args):
             summary.add_scalar_value('Epoch Valid Loss', checkpoint['loss'])
 
     if args.coreml_name is not None:
-        onnx_model_name = 'rsh.onnx'
-        deploy_model = RecurrentStackedHourglass(3, 64, train_dataset.n_joints + 1, device, T=1, depth=2, block=ConvolutionalBlock)
-
         dummy_input = torch.FloatTensor(1, 3, 256, 256)
-        torch.onnx.export(deploy_model, dummy_input, onnx_model_name)
-        mlmodel = convert(onnx_model_name,
-                          mode='regressor',
-                          image_input_names='0',
-                          image_output_names='309',
-                          predicted_feature_name='keypoints')
-        mlmodel.save(args.coreml_name)
+        save_coreml(model, dummy_input, args.coreml_name)
 
     for epoch in range(start_epoch, args.max_epochs):
         print('\n[epoch ' + str(epoch) + ']')
