@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from utils.train_utils import initialize_weights_kaiming
 from .modules.RecurrentHourglass import RecurrentHourglass
-from .modules.ResidualBlock import ResidualBlock
 
 
 class PretrainRecurrentStackedHourglass(nn.Module):
