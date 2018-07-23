@@ -8,16 +8,16 @@ from utils.train_utils import initialize_weights_kaiming
 
 
 class RecurrentHourglass(nn.Module):
-    def __init__(self, depth, hidden_channels, out_channels, device):
+    def __init__(self, depth, hidden_channels, out_channels, device, block=ResidualBlock):
         super(RecurrentHourglass, self).__init__()
 
         self.depth = depth
-        layers = (self.depth - 1) * [nn.ModuleList([ResidualBlock(hidden_channels, hidden_channels),
+        layers = (self.depth - 1) * [nn.ModuleList([block(hidden_channels, hidden_channels),
                                                     ConvGRU(hidden_channels, hidden_channels, 3, 1, device),
-                                                    ResidualBlock(hidden_channels, hidden_channels)])]
-        top_layer = [nn.ModuleList([ResidualBlock(hidden_channels, hidden_channels),
+                                                    block(hidden_channels, hidden_channels)])]
+        top_layer = [nn.ModuleList([block(hidden_channels, hidden_channels),
                                     ConvGRU(hidden_channels, hidden_channels, 3, 1, device),
-                                    ResidualBlock(hidden_channels, out_channels)])]
+                                    block(hidden_channels, out_channels)])]
         self.layers = nn.ModuleList(layers + top_layer)
         self.apply(initialize_weights_kaiming)
 
