@@ -17,6 +17,9 @@ from tqdm import tqdm
 from models.MSESequenceLoss import MSESequenceLoss
 from models.modules.ConvolutionalBlock import ConvolutionalBlock
 from onnx_coreml import convert
+from models.modules.ResidualBlock import ResidualBlock
+from models.modules.InvertedResidualBlock import InvertedResidualBlock
+from models.modules.ConvolutionalBlock import ConvolutionalBlock
 
 
 def train(model, loader, criterion, optimizer, scheduler, device, clip=None, summary=None):
@@ -99,7 +102,13 @@ def main(args):
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, **loader_args)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=args.batch_size, shuffle=False, **loader_args)
 
-    model = PretrainRecurrentStackedHourglass(3, 64, train_dataset.n_joints + 1, device, T=args.t, depth=args.depth)
+    if args.block == 'residual':
+        block = ResidualBlock
+    elif args.block == 'inverted':
+        block = InvertedResidualBlock
+    else:
+        block = ConvolutionalBlock
+    model = PretrainRecurrentStackedHourglass(3, 64, train_dataset.n_joints + 1, device, block, T=args.t, depth=args.depth)
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.decay)
@@ -168,6 +177,7 @@ if __name__ == '__main__':
     # Architecture
     parser.add_argument('--t', default=10, type=int)
     parser.add_argument('--depth', default=4, type=int)
+    parser.add_argument('--block', default='residual', type=str, choices=['residual', 'inverted', 'conv'])
 
     # Training
     parser.add_argument('--lr', default=1e-3, type=float)
