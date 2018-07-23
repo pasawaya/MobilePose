@@ -11,13 +11,14 @@ class RecurrentHourglass(nn.Module):
         super(RecurrentHourglass, self).__init__()
 
         self.depth = depth
-        layers = (self.depth - 1) * [nn.ModuleList([block(hidden_channels, hidden_channels),
-                                                    ConvGRU(hidden_channels, hidden_channels, 3, 1, device),
-                                                    block(hidden_channels, hidden_channels)])]
-        top_layer = [nn.ModuleList([block(hidden_channels, hidden_channels),
-                                    ConvGRU(hidden_channels, hidden_channels, 3, 1, device),
-                                    block(hidden_channels, out_channels)])]
-        self.layers = nn.ModuleList(layers + top_layer)
+        self.layers = []
+        for i in range(depth):
+            layer_out = out_channels if i == depth - 1 else hidden_channels
+            layer = [block(hidden_channels, hidden_channels),
+                     ConvGRU(hidden_channels, hidden_channels, 3, 1, device),
+                     block(hidden_channels, layer_out)]
+            self.layers.append(nn.ModuleList(layer))
+        self.layers = nn.ModuleList(self.layers)
         self.apply(initialize_weights_kaiming)
 
     def recursive_forward(self, layer, x):
