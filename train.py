@@ -3,17 +3,20 @@ from torch.utils.data import DataLoader
 from utils.train_utils import *
 import argparse
 import pycrayon
-import numpy as np
 from utils.dataset_utils import *
 import torch.nn.utils as utils
 import os
 from datasets.MPII import MPII
 from utils.evaluation import accuracy
 from models.RecurrentStackedHourglass import PretrainRecurrentStackedHourglass
+from models.RSHDeploy import RecurrentStackedHourglass
 from utils.augmentation import ImageTransformer
 import torch
+import torch.onnx
 from tqdm import tqdm
 from models.MSESequenceLoss import MSESequenceLoss
+from models.modules.ConvolutionalBlock import ConvolutionalBlock
+from onnx_coreml import convert
 
 
 def train(model, loader, criterion, optimizer, scheduler, device, clip=None, summary=None):
@@ -33,7 +36,7 @@ def train(model, loader, criterion, optimizer, scheduler, device, clip=None, sum
             optimizer.zero_grad()
             loss.backward()
             if clip is not None:
-                utils.clip_grad_value_(model.parameters(), clip)
+                utils.clip_grad_norm_(model.parameters(), clip)
             optimizer.step()
             scheduler.step()
 
@@ -106,7 +109,6 @@ def main(args):
     summary = None
     if args.host is not None:
         cc = pycrayon.CrayonClient(hostname=args.host)
-
         if args.experiment in cc.get_experiment_names():
             summary = cc.open_experiment(args.experiment)
         else:
@@ -124,6 +126,19 @@ def main(args):
         if args.host is not None:
             summary.add_scalar_value('Epoch Valid Accuracy', checkpoint['accuracy'])
             summary.add_scalar_value('Epoch Valid Loss', checkpoint['loss'])
+
+    if args.coreml_name is not None:
+        onnx_model_name = 'rsh.onnx'
+        deploy_model = RecurrentStackedHourglass(3, 64, train_dataset.n_joints + 1, device, T=1, depth=2, block=ConvolutionalBlock)
+
+        dummy_input = torch.FloatTensor(1, 3, 256, 256)
+        torch.onnx.export(deploy_model, dummy_input, onnx_model_name)
+        mlmodel = convert(onnx_model_name,
+                          mode='regressor',
+                          image_input_names='0',
+                          image_output_names='309',
+                          predicted_feature_name='keypoints')
+        mlmodel.save(args.coreml_name)
 
     for epoch in range(start_epoch, args.max_epochs):
         print('\n[epoch ' + str(epoch) + ']')
@@ -150,9 +165,11 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
+    # Architecture
     parser.add_argument('--t', default=10, type=int)
     parser.add_argument('--depth', default=4, type=int)
 
+    # Training
     parser.add_argument('--lr', default=1e-3, type=float)
     parser.add_argument('--lr_drop_interval', default=100000, type=int)
     parser.add_argument('--lr_drop_factor', default=0.333, type=float)
@@ -163,8 +180,13 @@ if __name__ == '__main__':
     parser.add_argument('--subset_size', default=None, type=int)
     parser.add_argument('--clip', default=None, type=int)
 
+    # Tensorboard
     parser.add_argument('--experiment', default='Recurrent Stacked Hourglass Training', type=str)
     parser.add_argument('--host', default=None, type=str)
+
+    # Other
     parser.add_argument('--resume', dest='resume', action='store_true')
     parser.add_argument('--device', default='cpu', type=str, choices=['cpu', '0', '1'])
+    parser.add_argument('--coreml_name', default=None, type=str)
+
     main(parser.parse_args())
