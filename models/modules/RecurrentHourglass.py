@@ -2,13 +2,12 @@
 
 import torch.nn as nn
 import torch.nn.functional as F
-from models.modules.ResidualBlock import ResidualBlock
 from models.modules.ConvGRU import ConvGRU
 from utils.train_utils import initialize_weights_kaiming
 
 
 class RecurrentHourglass(nn.Module):
-    def __init__(self, depth, hidden_channels, out_channels, device, block=ResidualBlock):
+    def __init__(self, depth, hidden_channels, out_channels, device, block):
         super(RecurrentHourglass, self).__init__()
 
         self.depth = depth
