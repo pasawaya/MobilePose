@@ -5,10 +5,8 @@ import os
 import torch.nn.utils as utils
 from tqdm import tqdm
 from datasets.MPII import MPII
-from onnx_coreml import convert
 
 import torch
-import torch.onnx
 from torch.utils.data import DataLoader
 
 from utils.train_utils import *
