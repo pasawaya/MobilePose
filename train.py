@@ -38,7 +38,7 @@ def train(model, loader, criterion, optimizer, scheduler, device, clip=None, sum
             optimizer.zero_grad()
             loss.backward()
             if clip is not None:
-                utils.clip_grad_norm_(model.parameters(), clip)
+                clip_grad_norm_(model.parameters(), clip)
             optimizer.step()
             scheduler.step()
 
