@@ -11,5 +11,4 @@ class MSESequenceLoss(nn.Module):
         T = inputs.shape[1]
         if targets.shape[1] != T:
             targets = targets.repeat(1, T, 1, 1, 1)
-
         return torch.mean(inputs.sub(targets) ** 2)
