@@ -13,13 +13,17 @@ train_ratio = 0.95
 
 
 class MPII(Dataset):
-    def __init__(self, root='data/MPII', transformer=None, output_size=256, train=True, subset_size=None):
+    def __init__(self, root='data/MPII', transformer=None, output_size=256, train=True, subset_size=None,
+                 sigma=7, stride=4, offset=0):
         self.root = root
         self.train = train
         self.output_size = output_size
         self.flag = int(train)
         self.transformer = transformer
         self.n_joints = 14
+        self.sigma = sigma
+        self.stride = stride
+        self.offset = offset
 
         self.annotations_path = os.path.join(self.root, 'mpii.json')
 
@@ -50,7 +54,7 @@ class MPII(Dataset):
         if self.transformer is not None:
             image, x, y, visibility = self.transformer(image, x, y, visibility)
 
-        label_map = compute_label_map(x, y, visibility, self.output_size)
+        label_map = compute_label_map(x, y, visibility, self.output_size, self.sigma, self.stride, self.offset)
         center_map = compute_center_map(self.output_size)
         return image, label_map, center_map, (x, y, visibility)
 

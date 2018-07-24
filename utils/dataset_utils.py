@@ -98,7 +98,7 @@ def visualize_truth(video, labels):
         plt.show()
 
 
-def compute_label_map(x, y, visibility, size=256, sigma=7, stride=4):
+def compute_label_map(x, y, visibility, size, sigma, stride, offset):
     if len(x.shape) < 2:
         x = np.expand_dims(x, 0)
         y = np.expand_dims(y, 0)
@@ -106,7 +106,7 @@ def compute_label_map(x, y, visibility, size=256, sigma=7, stride=4):
 
     t = x.shape[0]
     n_joints = x.shape[1]
-    label_size = np.floor(size / stride).astype(int)
+    label_size = np.floor(size / stride).astype(int) + offset
     label_map = np.zeros((t, n_joints + 1, label_size, label_size))
     start = (stride / 2.) - 0.5
     for t in range(t):

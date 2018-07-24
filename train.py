@@ -15,6 +15,7 @@ from utils.dataset_utils import *
 from utils.evaluation import accuracy
 
 from models.RecurrentStackedHourglass import PretrainRecurrentStackedHourglass
+from models.LSTMPoseMachine import PretrainLPM
 from models.modules.ResidualBlock import ResidualBlock
 from models.modules.InvertedResidualBlock import InvertedResidualBlock
 from models.modules.ConvolutionalBlock import ConvolutionalBlock
@@ -38,7 +39,7 @@ def train(model, loader, criterion, optimizer, scheduler, device, clip=None, sum
             optimizer.zero_grad()
             loss.backward()
             if clip is not None:
-                clip_grad_norm_(model.parameters(), clip)
+                utils.clip_grad_norm_(model.parameters(), clip)
             optimizer.step()
             scheduler.step()
 
@@ -93,10 +94,12 @@ def main(args):
     train_transformer = ImageTransformer(mean=mean, std=std)
     valid_transformer = ImageTransformer(p_scale=0.0, p_flip=0.0, p_rotate=0.0, mean=mean, std=std)
 
+    stride = 4 if args.model == 'hourglass' else 8
+    offset = 0 if args.model == 'hourglass' else -1
     train_dataset = MPII(root=mpii_root, transformer=train_transformer, output_size=args.resolution, train=True,
-                         subset_size=args.subset_size)
+                         subset_size=args.subset_size, sigma=7, stride=stride, offset=offset)
     valid_dataset = MPII(root=mpii_root, transformer=valid_transformer, output_size=args.resolution, train=False,
-                         subset_size=args.subset_size)
+                         subset_size=args.subset_size, sigma=7, stride=stride, offset=offset)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, **loader_args)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=args.batch_size, shuffle=False, **loader_args)
@@ -107,7 +110,11 @@ def main(args):
         block = InvertedResidualBlock
     else:
         block = ConvolutionalBlock
-    model = PretrainRecurrentStackedHourglass(3, 64, train_dataset.n_joints + 1, device, block, T=args.t, depth=args.depth)
+        
+    if args.model == 'hourglass':
+        model = PretrainRecurrentStackedHourglass(3, 64, train_dataset.n_joints + 1, device, block, T=args.t, depth=args.depth)
+    else:
+        model = PretrainLPM(3, 32, train_dataset.n_joints + 1, T=args.t)
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.decay)
@@ -161,6 +168,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # Architecture
+    parser.add_argument('--model', default='hourglass', type=str, choices=['hourglass', 'lpm'])
     parser.add_argument('--t', default=10, type=int)
     parser.add_argument('--depth', default=4, type=int)
     parser.add_argument('--block', default='residual', type=str, choices=['residual', 'inverted', 'conv'])
