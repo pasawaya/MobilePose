@@ -156,6 +156,7 @@ def main(args):
             summary.add_scalar_value('Learning Rate', scheduler.get_lr()[0])
 
         if valid_acc >= best_acc:
+            print('Saving checkpoint...\n')
             best_acc = valid_acc
             torch.save({'epoch': epoch + 1,
                         'state_dict': model.state_dict(),
