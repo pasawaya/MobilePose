@@ -151,7 +151,7 @@ class PretrainLPM(nn.Module):
         self.T = T
 
         self.stage_1 = _InitialStage(in_channels, hidden_channels, out_channels)
-        self.stage_t = _Stage(in_channels, hidden_channels, out_channels)
+        self.stage_t = _Stage(hidden_channels, out_channels)
 
         self.apply(initialize_weights_kaiming)
 
