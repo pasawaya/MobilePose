@@ -118,7 +118,8 @@ def main(args):
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.decay)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop_interval, gamma=args.lr_drop_factor)
+    gamma = args.lr_drop_factor if args.lr_drop_interval is not None else 1
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop_interval, gamma=gamma)
     criterion = MSESequenceLoss().to(device)
 
     summary = None
@@ -175,7 +176,7 @@ if __name__ == '__main__':
 
     # Training
     parser.add_argument('--lr', default=1e-3, type=float)
-    parser.add_argument('--lr_drop_interval', default=100000, type=int)
+    parser.add_argument('--lr_drop_interval', default=None, type=int)
     parser.add_argument('--lr_drop_factor', default=0.333, type=float)
     parser.add_argument('--batch_size', default=4, type=int)
     parser.add_argument('--decay', default=0, type=float)
