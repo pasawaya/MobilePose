@@ -5,8 +5,8 @@ import torch
 import shutil
 
 
-def save_checkpoint(state, is_best, checkpoint, best_name='best'):
-    filepath = os.path.join(checkpoint, 'last.pth.tar')
+def save_checkpoint(state, is_best, checkpoint, prefix=''):
+    filepath = os.path.join(checkpoint, prefix + 'last.pth.tar')
     if not os.path.exists(checkpoint):
         print("Checkpoint Directory does not exist! Making directory {}".format(checkpoint))
         os.mkdir(checkpoint)
@@ -14,11 +14,11 @@ def save_checkpoint(state, is_best, checkpoint, best_name='best'):
         print("Checkpoint Directory exists! ")
     torch.save(state, filepath)
     if is_best:
-        shutil.copyfile(filepath, os.path.join(checkpoint, best_name + '.pth.tar'))
+        shutil.copyfile(filepath, os.path.join(checkpoint, prefix + 'best.pth.tar'))
 
 
-def load_checkpoint(checkpoint, model, optimizer=None, best_name='best'):
-    filepath = os.path.join(checkpoint, best_name)
+def load_checkpoint(checkpoint, model, optimizer=None, prefix='best'):
+    filepath = os.path.join(checkpoint, prefix + 'best.pth.tar')
     if not os.path.exists(filepath):
         raise("File doesn't exist {}".format(filepath))
     checkpoint = torch.load(filepath)

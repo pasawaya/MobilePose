@@ -2,6 +2,7 @@
 import argparse
 import pycrayon
 import os
+import time
 import torch.nn.utils as utils
 from tqdm import tqdm
 from datasets.MPII import MPII
@@ -77,6 +78,7 @@ def validate(model, loader, criterion, device):
 
 def main(args):
     model_dir = 'experiments'
+    start_time_prefix = str(int(time.time())) + "_"
 
     device_name = 'cpu' if args.device == 'cpu' else 'cuda:' + args.device
     device = torch.device(device_name)
@@ -134,7 +136,7 @@ def main(args):
     start_epoch = 0
 
     if args.resume:
-        checkpoint = load_checkpoint(model_dir, model, optimizer)
+        checkpoint = load_checkpoint(model_dir, model, optimizer, prefix=start_time_prefix)
         start_epoch = checkpoint['epoch']
         best_acc = checkpoint['accuracy']
         if args.host is not None:
@@ -158,7 +160,7 @@ def main(args):
                          'state_dict': model.state_dict(),
                          'optimizer': optimizer.state_dict(),
                          'accuracy': valid_acc,
-                         'loss': valid_loss}, is_best=is_best, checkpoint=model_dir)
+                         'loss': valid_loss}, is_best=is_best, checkpoint=model_dir, prefix=start_time_prefix)
 
 
 if __name__ == '__main__':
