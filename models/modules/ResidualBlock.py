@@ -8,8 +8,7 @@ class ResidualBlock(nn.Module):
         super(ResidualBlock, self).__init__()
 
         self.use_res_connect = in_channels == out_channels
-
-        hidden_channels = int(out_channels / 2.)
+        hidden_channels = out_channels // 2
 
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels, hidden_channels, 1, bias=False),
