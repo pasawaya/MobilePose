@@ -86,7 +86,7 @@ def main(args):
     start_time_prefix = str(int(time.time()))[-4:] + "_"
     print('\nCheckpoint prefix will be ' + start_time_prefix)
 
-    device_name = 'cpu' if args.device == 'cpu' else 'cuda:' + args.device
+    device_name = 'cpu' if args.device is None else 'cuda:' + args.device
     device = torch.device(device_name)
     loader_args = {'num_workers': 1, 'pin_memory': True} if 'cuda' in device_name else {}
 
@@ -206,6 +206,6 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint_name', default=None, type=str)
 
     # Other
-    parser.add_argument('--device', default='cpu', type=str, choices=['cpu', '0', '1'])
+    parser.add_argument('--gpu', default=None, type=int)
 
     main(parser.parse_args())
