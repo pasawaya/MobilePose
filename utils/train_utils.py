@@ -14,6 +14,7 @@ def save_checkpoint(state, is_best, checkpoint, prefix=''):
         print("Saving checkpoint... ")
     torch.save(state, filepath)
     if is_best:
+        print("Checkpoint is best!")
         shutil.copyfile(filepath, os.path.join(checkpoint, prefix + 'best.pth.tar'))
 
 
