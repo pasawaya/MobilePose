@@ -76,7 +76,7 @@ def validate(model, loader, criterion, device):
 
 
 def main(args):
-    snapshot_name = 'checkpoint.pth.tar'
+    model_dir = 'experiments'
 
     device_name = 'cpu' if args.device == 'cpu' else 'cuda:' + args.device
     device = torch.device(device_name)
@@ -134,10 +134,8 @@ def main(args):
     start_epoch = 0
 
     if args.resume:
-        checkpoint = torch.load(snapshot_name)
+        checkpoint = load_checkpoint(model_dir, model, optimizer)
         start_epoch = checkpoint['epoch']
-        model.load_state_dict(checkpoint['state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer'])
         best_acc = checkpoint['accuracy']
         if args.host is not None:
             summary.add_scalar_value('Epoch Valid Accuracy', checkpoint['accuracy'])
@@ -155,15 +153,12 @@ def main(args):
             summary.add_scalar_value('Epoch Valid Accuracy', valid_acc)
             summary.add_scalar_value('Learning Rate', scheduler.get_lr()[0])
 
-        if valid_acc >= best_acc:
-            print('Saving checkpoint...\n')
-            best_acc = valid_acc
-            torch.save({'epoch': epoch + 1,
-                        'state_dict': model.state_dict(),
-                        'optimizer': optimizer.state_dict(),
-                        'accuracy': valid_acc,
-                        'loss': valid_loss},
-                       snapshot_name)
+        is_best = valid_acc >= best_acc
+        save_checkpoint({'epoch': epoch + 1,
+                         'state_dict': model.state_dict(),
+                         'optimizer': optimizer.state_dict(),
+                         'accuracy': valid_acc,
+                         'loss': valid_loss}, is_best=is_best, checkpoint=model_dir)
 
 
 if __name__ == '__main__':

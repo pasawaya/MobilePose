@@ -1,5 +1,33 @@
 
 import torch.nn as nn
+import os
+import torch
+import shutil
+
+
+def save_checkpoint(state, is_best, checkpoint, best_name='best'):
+    filepath = os.path.join(checkpoint, 'last.pth.tar')
+    if not os.path.exists(checkpoint):
+        print("Checkpoint Directory does not exist! Making directory {}".format(checkpoint))
+        os.mkdir(checkpoint)
+    else:
+        print("Checkpoint Directory exists! ")
+    torch.save(state, filepath)
+    if is_best:
+        shutil.copyfile(filepath, os.path.join(checkpoint, best_name + '.pth.tar'))
+
+
+def load_checkpoint(checkpoint, model, optimizer=None, best_name='best'):
+    filepath = os.path.join(checkpoint, best_name)
+    if not os.path.exists(filepath):
+        raise("File doesn't exist {}".format(filepath))
+    checkpoint = torch.load(filepath)
+    model.load_state_dict(checkpoint['state_dict'])
+
+    if optimizer:
+        optimizer.load_state_dict(checkpoint['optim_dict'])
+
+    return checkpoint
 
 
 def initialize_weights_normal(layer):
