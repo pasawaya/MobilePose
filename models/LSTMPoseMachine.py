@@ -86,9 +86,6 @@ class ConvLSTM(nn.Module):
         self.g_h = nn.Conv2d(nc, nc, 3, padding=1)
         self.f_h = nn.Conv2d(nc, nc, 3, padding=1)
 
-        self.lr_multiplier = 2
-        self.decay_multiplier = 0
-
     def forward(self, f_t, h_t_1, c_t_1):
         i = F.sigmoid(self.i_x(f_t) + self.i_h(h_t_1))
         o = F.sigmoid(self.o_x(f_t) + self.o_h(h_t_1))
