@@ -5,9 +5,9 @@ import torch.nn.functional as F
 from utils.train_utils import initialize_weights_kaiming
 
 
-class _Processor(nn.Module):
+class Processor(nn.Module):
     def __init__(self, in_channels, out_channels):
-        super(_Processor, self).__init__()
+        super(Processor, self).__init__()
         self.process = nn.Sequential(
             nn.Conv2d(in_channels, 128, 9, padding=4),
             nn.ReLU(inplace=True),
@@ -33,9 +33,9 @@ class _Processor(nn.Module):
         return self.process(x_t)
 
 
-class _Encoder(nn.Module):
+class Encoder(nn.Module):
     def __init__(self, in_channels, out_channels):
-        super(_Encoder, self).__init__()
+        super(Encoder, self).__init__()
         self.encode = nn.Sequential(
             nn.Conv2d(in_channels, 128, 9, padding=4),
             nn.ReLU(inplace=True),
@@ -54,9 +54,9 @@ class _Encoder(nn.Module):
         return self.encode(x_t)
 
 
-class _Generator(nn.Module):
+class Generator(nn.Module):
     def __init__(self, in_channels, out_channels):
-        super(_Generator, self).__init__()
+        super(Generator, self).__init__()
         self.generate = nn.Sequential(
             nn.Conv2d(in_channels, 128, 11, padding=5),
             nn.ReLU(inplace=True),
@@ -73,9 +73,9 @@ class _Generator(nn.Module):
         return self.generate(h_t)
 
 
-class _LSTM(nn.Module):
+class ConvLSTM(nn.Module):
     def __init__(self, nc):
-        super(_LSTM, self).__init__()
+        super(ConvLSTM, self).__init__()
         self.i_x = nn.Conv2d(nc, nc, 3, padding=1)
         self.o_x = nn.Conv2d(nc, nc, 3, padding=1)
         self.g_x = nn.Conv2d(nc, nc, 3, padding=1)
@@ -99,14 +99,14 @@ class _LSTM(nn.Module):
         return h_t, c_t
 
 
-class _Stage(nn.Module):
+class Stage(nn.Module):
     def __init__(self, hidden_channels, out_channels):
-        super(_Stage, self).__init__()
+        super(Stage, self).__init__()
 
         lstm_size = hidden_channels + out_channels + 1
 
-        self.lstm = _LSTM(lstm_size)
-        self.generate = _Generator(lstm_size, out_channels)
+        self.lstm = ConvLSTM(lstm_size)
+        self.generate = Generator(lstm_size, out_channels)
 
     def forward(self, f_1, b_t_1, h_t_1, c_t_1, centers):
         f_t = torch.cat([f_1, b_t_1, centers], dim=1)
@@ -116,14 +116,14 @@ class _Stage(nn.Module):
         return b_t, h_t, c_t
 
 
-class _InitialStage(nn.Module):
+class InitialStage(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels):
-        super(_InitialStage, self).__init__()
+        super(InitialStage, self).__init__()
         lstm_size = hidden_channels + out_channels + 1
 
-        self.process = _Processor(in_channels, out_channels)
-        self.encode = _Encoder(in_channels, hidden_channels)
-        self.generate = _Generator(lstm_size, out_channels)
+        self.process = Processor(in_channels, out_channels)
+        self.encode = Encoder(in_channels, hidden_channels)
+        self.generate = Generator(lstm_size, out_channels)
 
         self.i_x = nn.Conv2d(lstm_size, lstm_size, 3, padding=1)
         self.o_x = nn.Conv2d(lstm_size, lstm_size, 3, padding=1)
@@ -150,8 +150,8 @@ class PretrainLPM(nn.Module):
 
         self.T = T
 
-        self.stage_1 = _InitialStage(in_channels, hidden_channels, out_channels)
-        self.stage_t = _Stage(hidden_channels, out_channels)
+        self.stage_1 = InitialStage(in_channels, hidden_channels, out_channels)
+        self.stage_t = Stage(hidden_channels, out_channels)
 
         self.apply(initialize_weights_kaiming)
 
