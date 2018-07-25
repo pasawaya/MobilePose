@@ -138,8 +138,8 @@ def main(args):
     best_acc = 0.
     start_epoch = 0
 
-    if args.checkpoint_path is not None:
-        checkpoint = load_checkpoint(args.checkpoint_path, model, optimizer)
+    if args.checkpoint_name is not None:
+        checkpoint = load_checkpoint(model_dir, args.checkpoint_name, model, optimizer)
         start_epoch = checkpoint['epoch']
         best_acc = checkpoint['accuracy']
         if args.host is not None:
@@ -191,7 +191,7 @@ if __name__ == '__main__':
     parser.add_argument('--host', default=None, type=str)
 
     # Other
-    parser.add_argument('--checkpoint_path', default=None, type=str)
+    parser.add_argument('--checkpoint_name', default=None, type=str)
     parser.add_argument('--device', default='cpu', type=str, choices=['cpu', '0', '1'])
 
     main(parser.parse_args())
