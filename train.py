@@ -6,7 +6,6 @@ import torch.nn.utils as utils
 from tqdm import tqdm
 from datasets.MPII import MPII
 
-import torch
 from torch.utils.data import DataLoader
 
 from utils.train_utils import *
@@ -16,10 +15,12 @@ from utils.evaluation import accuracy
 
 from models.RecurrentStackedHourglass import PretrainRecurrentStackedHourglass
 from models.LSTMPoseMachine import PretrainLPM
+from models.LSTMPoseCoordinatesMachine import PretrainCoordinateLPM
 from models.modules.ResidualBlock import ResidualBlock
 from models.modules.InvertedResidualBlock import InvertedResidualBlock
 from models.modules.ConvolutionalBlock import ConvolutionalBlock
-from models.MSESequenceLoss import MSESequenceLoss
+from models.losses.MSESequenceLoss import MSESequenceLoss
+from models.losses.CoordinateLoss import CoordinateLoss
 
 
 def train(model, loader, criterion, optimizer, device, scheduler=None, clip=None, summary=None):
@@ -29,12 +30,15 @@ def train(model, loader, criterion, optimizer, device, scheduler=None, clip=None
     model.train()
 
     with tqdm(total=len(loader)) as t:
-        for i, (frames, label_map, centers, _) in enumerate(loader):
+        for i, (frames, label_map, centers, meta) in enumerate(loader):
             frames, label_map, centers = frames.to(device), label_map.to(device), centers.to(device)
-
             outputs = model(frames, centers)
-            loss = criterion(outputs, label_map)
-            acc = accuracy(outputs, label_map)
+            if isinstance(criterion, CoordinateLoss):
+                loss = criterion(*outputs, meta)
+                acc = accuracy(outputs[0], label_map)
+            else:
+                loss = criterion(outputs, label_map)
+                acc = accuracy(outputs, label_map)
 
             optimizer.zero_grad()
             loss.backward()
@@ -100,10 +104,13 @@ def main(args):
 
     stride = 4 if args.model == 'hourglass' else 8
     offset = 0 if args.model == 'hourglass' else -1
+    include_background = args.model != 'coord_lpm'
     train_dataset = MPII(root=mpii_root, transformer=train_transformer, output_size=args.resolution, train=True,
-                         subset_size=args.subset_size, sigma=7, stride=stride, offset=offset)
+                         subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
+                         include_background=include_background)
     valid_dataset = MPII(root=mpii_root, transformer=valid_transformer, output_size=args.resolution, train=False,
-                         subset_size=args.subset_size, sigma=7, stride=stride, offset=offset)
+                         subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
+                         include_background=include_background)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, **loader_args)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=args.batch_size, shuffle=False, **loader_args)
@@ -114,18 +121,22 @@ def main(args):
         block = InvertedResidualBlock
     else:
         block = ConvolutionalBlock
-        
+
+    criterion = MSESequenceLoss()
     if args.model == 'hourglass':
         model = PretrainRecurrentStackedHourglass(3, 64, train_dataset.n_joints + 1, device, block, T=args.t, depth=args.depth)
-    else:
+    elif args.model == 'lpm':
         model = PretrainLPM(3, 32, train_dataset.n_joints + 1, T=args.t)
+    else:
+        model = PretrainCoordinateLPM(3, 32, train_dataset.n_joints, T=args.t)
+        criterion = CoordinateLoss()
     model = model.to(device)
+    criterion = criterion.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.decay)
     scheduler = None
     if args.lr_step_interval:
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_step_interval, gamma=args.gamma)
-    criterion = MSESequenceLoss().to(device)
 
     summary = None
     if args.host is not None:
@@ -171,7 +182,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # Architecture
-    parser.add_argument('--model', default='hourglass', type=str, choices=['hourglass', 'lpm'])
+    parser.add_argument('--model', default='hourglass', type=str, choices=['hourglass', 'lpm', 'coord_lpm'])
     parser.add_argument('--t', default=10, type=int)
     parser.add_argument('--depth', default=4, type=int)
     parser.add_argument('--block', default='residual', type=str, choices=['residual', 'inverted', 'conv'])

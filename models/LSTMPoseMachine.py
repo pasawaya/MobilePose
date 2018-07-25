@@ -91,26 +91,9 @@ class ConvLSTM(nn.Module):
         o = F.sigmoid(self.o_x(f_t) + self.o_h(h_t_1))
         g = F.sigmoid(self.g_x(f_t) + self.g_h(h_t_1))
         f = F.sigmoid(self.f_x(f_t) + self.f_h(h_t_1))
-        c_t = (i * g) + (f + c_t_1)
-        h_t = o * F.tanh(c_t)
+        c_t = i.mul(g).add(f.add(c_t_1))
+        h_t = o.mul(F.tanh(c_t))
         return h_t, c_t
-
-
-class Stage(nn.Module):
-    def __init__(self, hidden_channels, out_channels):
-        super(Stage, self).__init__()
-
-        lstm_size = hidden_channels + out_channels + 1
-
-        self.lstm = ConvLSTM(lstm_size)
-        self.generate = Generator(lstm_size, out_channels)
-
-    def forward(self, f_1, b_t_1, h_t_1, c_t_1, centers):
-        f_t = torch.cat([f_1, b_t_1, centers], dim=1)
-
-        h_t, c_t = self.lstm(f_t, h_t_1, c_t_1)
-        b_t = self.generate(h_t)
-        return b_t, h_t, c_t
 
 
 class InitialStage(nn.Module):
@@ -135,10 +118,27 @@ class InitialStage(nn.Module):
         o = F.sigmoid(self.o_x(t_1))
         g = F.tanh(self.g_x(t_1))
 
-        c_1 = i * g
-        l_1 = o * F.tanh(c_1)
+        c_1 = i.mul(g)
+        l_1 = o.mul(F.tanh(c_1))
         b_1 = self.generate(l_1)
         return f_0, f_1, b_1, l_1, c_1
+
+
+class Stage(nn.Module):
+    def __init__(self, hidden_channels, out_channels):
+        super(Stage, self).__init__()
+
+        lstm_size = hidden_channels + out_channels + 1
+
+        self.lstm = ConvLSTM(lstm_size)
+        self.generate = Generator(lstm_size, out_channels)
+
+    def forward(self, f_1, b_t_1, h_t_1, c_t_1, centers):
+        f_t = torch.cat([f_1, b_t_1, centers], dim=1)
+
+        h_t, c_t = self.lstm(f_t, h_t_1, c_t_1)
+        b_t = self.generate(h_t)
+        return b_t, h_t, c_t
 
 
 class PretrainLPM(nn.Module):

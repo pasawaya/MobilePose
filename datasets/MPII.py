@@ -14,7 +14,7 @@ train_ratio = 0.95
 
 class MPII(Dataset):
     def __init__(self, root='data/MPII', transformer=None, output_size=256, train=True, subset_size=None,
-                 sigma=7, stride=4, offset=0):
+                 sigma=7, stride=4, offset=0, include_background=True):
         self.root = root
         self.train = train
         self.output_size = output_size
@@ -24,6 +24,7 @@ class MPII(Dataset):
         self.sigma = sigma
         self.stride = stride
         self.offset = offset
+        self.background = include_background
 
         self.annotations_path = os.path.join(self.root, 'mpii.json')
 
@@ -54,7 +55,7 @@ class MPII(Dataset):
         if self.transformer is not None:
             image, x, y, visibility = self.transformer(image, x, y, visibility)
 
-        label_map = compute_label_map(x, y, visibility, self.output_size, self.sigma, self.stride, self.offset)
+        label_map = compute_label_map(x, y, visibility, self.output_size, self.sigma, self.stride, self.offset, self.background)
         center_map = compute_center_map(self.output_size)
         x, y = np.expand_dims(x, 1), np.expand_dims(y, 1)
         meta = torch.from_numpy(np.squeeze(np.hstack([x, y]))).float()
