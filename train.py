@@ -80,7 +80,7 @@ def validate(model, loader, criterion, device):
 
 def main(args):
     model_dir = 'experiments'
-    start_time_prefix = str(int(time.time())) + "_"
+    start_time_prefix = str(int(time.time()))[-4:] + "_"
 
     device_name = 'cpu' if args.device == 'cpu' else 'cuda:' + args.device
     device = torch.device(device_name)
