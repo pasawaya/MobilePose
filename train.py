@@ -1,7 +1,6 @@
 
 import argparse
 import pycrayon
-import os
 import time
 import torch.nn.utils as utils
 from tqdm import tqdm
@@ -81,6 +80,7 @@ def validate(model, loader, criterion, device):
 def main(args):
     model_dir = 'experiments'
     start_time_prefix = str(int(time.time()))[-4:] + "_"
+    print('Checkpoint prefix will be ' + start_time_prefix)
 
     device_name = 'cpu' if args.device == 'cpu' else 'cuda:' + args.device
     device = torch.device(device_name)
@@ -190,8 +190,10 @@ if __name__ == '__main__':
     parser.add_argument('--experiment', default='Recurrent Stacked Hourglass Training', type=str)
     parser.add_argument('--host', default=None, type=str)
 
-    # Other
+    # Checkpoints
     parser.add_argument('--checkpoint_name', default=None, type=str)
+
+    # Other
     parser.add_argument('--device', default='cpu', type=str, choices=['cpu', '0', '1'])
 
     main(parser.parse_args())
