@@ -23,7 +23,7 @@ from models.modules.ConvolutionalBlock import ConvolutionalBlock
 from models.MSESequenceLoss import MSESequenceLoss
 
 
-def train(model, loader, criterion, optimizer, scheduler, device, clip=None, summary=None):
+def train(model, loader, criterion, optimizer, device, scheduler=None, clip=None, summary=None):
     loss_avg = RunningAverage()
     acc_avg = RunningAverage()
 
@@ -42,7 +42,9 @@ def train(model, loader, criterion, optimizer, scheduler, device, clip=None, sum
             if clip is not None:
                 utils.clip_grad_norm_(model.parameters(), clip)
             optimizer.step()
-            scheduler.step()
+
+            if scheduler is not None:
+                scheduler.step()
 
             loss_avg.update(loss.item())
             acc_avg.update(acc)
@@ -120,8 +122,9 @@ def main(args):
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.decay)
-    gamma = args.lr_drop_factor if args.lr_drop_interval is not None else 1
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop_interval, gamma=gamma)
+    scheduler = None
+    if args.lr_step_interval:
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_step_interval, gamma=args.gamma)
     criterion = MSESequenceLoss().to(device)
 
     summary = None
@@ -145,7 +148,7 @@ def main(args):
 
     for epoch in range(start_epoch, args.max_epochs):
         print('\n[epoch ' + str(epoch) + ']')
-        train_loss, train_acc = train(model, train_loader, criterion, optimizer, scheduler, device, args.clip, summary)
+        train_loss, train_acc = train(model, train_loader, criterion, optimizer, device, scheduler, args.clip, summary)
         valid_loss, valid_acc = validate(model, valid_loader, criterion, device)
 
         if args.host is not None:
@@ -174,8 +177,8 @@ if __name__ == '__main__':
 
     # Training
     parser.add_argument('--lr', default=1e-3, type=float)
-    parser.add_argument('--lr_drop_interval', default=None, type=int)
-    parser.add_argument('--lr_drop_factor', default=0.333, type=float)
+    parser.add_argument('--lr_step_interval', default=None, type=int)
+    parser.add_argument('--gamma', default=1, type=float)
     parser.add_argument('--batch_size', default=4, type=int)
     parser.add_argument('--decay', default=0, type=float)
     parser.add_argument('--max_epochs', default=5000, type=int)
