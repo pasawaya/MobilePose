@@ -80,7 +80,7 @@ def validate(model, loader, criterion, device):
 def main(args):
     model_dir = 'experiments'
     start_time_prefix = str(int(time.time()))[-4:] + "_"
-    print('Checkpoint prefix will be ' + start_time_prefix)
+    print('\nCheckpoint prefix will be ' + start_time_prefix)
 
     device_name = 'cpu' if args.device == 'cpu' else 'cuda:' + args.device
     device = torch.device(device_name)
@@ -156,7 +156,8 @@ def main(args):
             summary.add_scalar_value('Epoch Valid Loss', valid_loss)
             summary.add_scalar_value('Epoch Train Accuracy', train_acc)
             summary.add_scalar_value('Epoch Valid Accuracy', valid_acc)
-            summary.add_scalar_value('Learning Rate', scheduler.get_lr()[0])
+            if scheduler is not None:
+                summary.add_scalar_value('Learning Rate', scheduler.get_lr()[0])
 
         is_best = valid_acc >= best_acc
         save_checkpoint({'epoch': epoch + 1,
