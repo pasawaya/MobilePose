@@ -56,7 +56,9 @@ class MPII(Dataset):
 
         label_map = compute_label_map(x, y, visibility, self.output_size, self.sigma, self.stride, self.offset)
         center_map = compute_center_map(self.output_size)
-        return image, label_map, center_map, (x, y, visibility)
+        x, y = np.expand_dims(x, 1), np.expand_dims(y, 1)
+        meta = torch.from_numpy(np.squeeze(np.hstack([x, y]))).float()
+        return image, label_map, center_map, meta
 
     def generate_annotations(self):
         mpii_joints = 16
