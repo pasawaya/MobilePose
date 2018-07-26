@@ -180,6 +180,7 @@ def main(args):
                          'optimizer': optimizer.state_dict(),
                          'accuracy': valid_acc,
                          'loss': valid_loss}, is_best=is_best, checkpoint=args.model_dir, prefix=start_time_prefix)
+        best_acc = valid_acc if is_best else best_acc
 
 
 if __name__ == '__main__':
