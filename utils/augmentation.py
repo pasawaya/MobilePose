@@ -42,7 +42,7 @@ class ImageTransformer(object):
         if random() < self.p_flip:
             image, bbox, x, y = self.flip(image, bbox, x, y)
 
-        image, x, y = self.crop(image, bbox, x, y, self.output_size)
+        image, _, x, y = self.crop(image, bbox, x, y, self.output_size)
 
         if random() < self.p_rotate:
             angle = -self.max_degree + 2 * self.max_degree * random()
@@ -105,7 +105,8 @@ class ImageTransformer(object):
         x = np.clip(x, x_min, x_max)
         y = np.clip(y, y_min, y_max)
 
-        return cropped, x.astype(np.int), y.astype(np.int)
+        bbox += np.array([x_min, y_min, x_min, y_min])
+        return cropped, bbox, x.astype(np.int), y.astype(np.int)
 
     @staticmethod
     def scale(image, bbox, x, y, f_xy):
