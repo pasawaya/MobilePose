@@ -31,15 +31,15 @@ def train(model, loader, criterion, optimizer, device, scheduler=None, clip=None
     model.train()
 
     with tqdm(total=len(loader)) as t:
-        for i, (frames, label_map, centers, meta) in enumerate(loader):
-            frames, label_map, centers = frames.to(device), label_map.to(device), centers.to(device)
+        for i, (frames, labels, centers, meta) in enumerate(loader):
+            frames, labels, centers, meta = frames.to(device), labels.to(device), centers.to(device), meta.to(device)
             outputs = model(frames, centers)
             if isinstance(criterion, CoordinateLoss):
                 loss = criterion(*outputs, meta)
-                acc = accuracy(outputs[0], label_map)
+                acc = accuracy(outputs[0], labels)
             else:
-                loss = criterion(outputs, label_map)
-                acc = accuracy(outputs, label_map)
+                loss = criterion(outputs, labels)
+                acc = accuracy(outputs, labels)
 
             optimizer.zero_grad()
             loss.backward()
@@ -69,12 +69,12 @@ def validate(model, loader, criterion, device):
     acc_avg = RunningAverage()
 
     model.eval()
-    for i, (frames, label_map, centers, _) in enumerate(loader):
-        frames, label_map, centers = frames.to(device), label_map.to(device), centers.to(device)
+    for i, (frames, labels, centers, _) in enumerate(loader):
+        frames, labels, centers = frames.to(device), labels.to(device), centers.to(device)
 
         outputs = model(frames, centers)
-        loss = criterion(outputs, label_map)
-        acc = accuracy(outputs, label_map)
+        loss = criterion(outputs, labels)
+        acc = accuracy(outputs, labels)
 
         loss_avg.update(loss.item())
         acc_avg.update(acc)
