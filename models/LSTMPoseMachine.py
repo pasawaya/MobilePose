@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from .modules.ConvLSTM import ConvLSTM
 from utils.train_utils import initialize_weights_kaiming
 
 
@@ -71,29 +72,6 @@ class Generator(nn.Module):
 
     def forward(self, h_t):
         return self.generate(h_t)
-
-
-class ConvLSTM(nn.Module):
-    def __init__(self, nc):
-        super(ConvLSTM, self).__init__()
-        self.i_x = nn.Conv2d(nc, nc, 3, padding=1)
-        self.o_x = nn.Conv2d(nc, nc, 3, padding=1)
-        self.g_x = nn.Conv2d(nc, nc, 3, padding=1)
-        self.f_x = nn.Conv2d(nc, nc, 3, padding=1)
-
-        self.i_h = nn.Conv2d(nc, nc, 3, padding=1)
-        self.o_h = nn.Conv2d(nc, nc, 3, padding=1)
-        self.g_h = nn.Conv2d(nc, nc, 3, padding=1)
-        self.f_h = nn.Conv2d(nc, nc, 3, padding=1)
-
-    def forward(self, f_t, h_t_1, c_t_1):
-        i = F.sigmoid(self.i_x(f_t) + self.i_h(h_t_1))
-        o = F.sigmoid(self.o_x(f_t) + self.o_h(h_t_1))
-        g = F.sigmoid(self.g_x(f_t) + self.g_h(h_t_1))
-        f = F.sigmoid(self.f_x(f_t) + self.f_h(h_t_1))
-        c_t = i.mul(g).add(f.add(c_t_1))
-        h_t = o.mul(F.tanh(c_t))
-        return h_t, c_t
 
 
 class InitialStage(nn.Module):
