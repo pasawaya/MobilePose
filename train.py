@@ -86,7 +86,7 @@ def main(args):
     start_time_prefix = str(int(time.time()))[-4:] + "_"
     print('\nCheckpoint prefix will be ' + start_time_prefix)
 
-    device_name = 'cpu' if args.device is None else 'cuda:' + args.device
+    device_name = 'cpu' if args.gpu is None else 'cuda:' + args.gpu
     device = torch.device(device_name)
     loader_args = {'num_workers': 1, 'pin_memory': True} if 'cuda' in device_name else {}
 
@@ -189,7 +189,7 @@ if __name__ == '__main__':
 
     # Training
     parser.add_argument('--lr', default=1e-3, type=float)
-    parser.add_argument('--lr_step_interval', default=None, type=int)
+    parser.add_argument('--lr_step_interval', default=None, type=int)   # 90k seems best for lpm
     parser.add_argument('--gamma', default=1, type=float)
     parser.add_argument('--batch_size', default=4, type=int)
     parser.add_argument('--decay', default=0, type=float)
