@@ -199,7 +199,7 @@ if __name__ == '__main__':
     parser.add_argument('--clip', default=None, type=float)
 
     # Tensorboard
-    parser.add_argument('--experiment', default='Recurrent Stacked Hourglass Training', type=str)
+    parser.add_argument('--experiment', default='Training', type=str)
     parser.add_argument('--host', default=None, type=str)
 
     # Checkpoints
