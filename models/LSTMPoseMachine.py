@@ -74,59 +74,35 @@ class Generator(nn.Module):
         return self.generate(h_t)
 
 
-class InitialStage(nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels):
-        super(InitialStage, self).__init__()
-        lstm_size = hidden_channels + out_channels + 1
-
-        self.process = Processor(in_channels, out_channels)
-        self.encode = Encoder(in_channels, hidden_channels)
-        self.generate = Generator(lstm_size, out_channels)
-
-        self.i_x = nn.Conv2d(lstm_size, lstm_size, 3, padding=1)
-        self.o_x = nn.Conv2d(lstm_size, lstm_size, 3, padding=1)
-        self.g_x = nn.Conv2d(lstm_size, lstm_size, 3, padding=1)
-
-    def forward(self, f_1, centers):
-        f_0 = self.process(f_1)
-        f_1 = self.encode(f_1)
-        t_1 = torch.cat([f_1, f_0, centers], dim=1)
-
-        i = F.sigmoid(self.i_x(t_1))
-        o = F.sigmoid(self.o_x(t_1))
-        g = F.tanh(self.g_x(t_1))
-
-        c_1 = i.mul(g)
-        l_1 = o.mul(F.tanh(c_1))
-        b_1 = self.generate(l_1)
-        return f_0, f_1, b_1, l_1, c_1
-
-
 class Stage(nn.Module):
-    def __init__(self, hidden_channels, out_channels):
+    def __init__(self, in_channels, hidden_channels, out_channels, device):
         super(Stage, self).__init__()
 
         lstm_size = hidden_channels + out_channels + 1
 
-        self.lstm = ConvLSTM(lstm_size)
+        self.encode = Encoder(in_channels, hidden_channels)
+        self.lstm = ConvLSTM(lstm_size, 3, 1, True, device)
         self.generate = Generator(lstm_size, out_channels)
 
-    def forward(self, f_1, b_t_1, h_t_1, c_t_1, centers):
-        f_t = torch.cat([f_1, b_t_1, centers], dim=1)
+    def forward(self, f_t, b_t_1, h_t_1, c_t_1, centers):
+        f_t = self.encode(f_t)
+        f_t = torch.cat([f_t, b_t_1, centers], dim=1)
 
         h_t, c_t = self.lstm(f_t, h_t_1, c_t_1)
+
         b_t = self.generate(h_t)
         return b_t, h_t, c_t
 
 
 class PretrainLPM(nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, T=5):
+    def __init__(self, in_channels, hidden_channels, out_channels, device, T=5):
         super(PretrainLPM, self).__init__()
 
         self.T = T
 
-        self.stage_1 = InitialStage(in_channels, hidden_channels, out_channels)
-        self.stage_t = Stage(hidden_channels, out_channels)
+        self.process = Processor(in_channels, out_channels)
+        self.stage_1 = Stage(in_channels, hidden_channels, out_channels, device)
+        self.stage_t = Stage(in_channels, hidden_channels, out_channels, device)
 
         self.apply(initialize_weights_kaiming)
 
@@ -137,14 +113,15 @@ class PretrainLPM(nn.Module):
     def forward(self, x, centers):
         centers = F.avg_pool2d(centers, 9, stride=8)
 
-        f_0, f_1, b_1, l_1, c_1 = self.stage_1(x, centers)
-        beliefs = [f_0, b_1]
+        b_0 = self.process(x)
+        b_1, h_1, c_1 = self.stage_1(x, b_0, None, None, centers)
+        beliefs = [b_0, b_1]
 
-        b_t_1, l_t_1, c_t_1 = b_1, l_1, c_1
+        b_t_1, h_t_1, c_t_1 = b_1, h_1, c_1
         for t in range(self.T - 1):
-            b_t, l_t, c_t = self.stage_t(f_1, b_t_1, l_t_1, c_t_1, centers)
+            b_t, h_t, c_t = self.stage_t(x, b_t_1, h_t_1, c_t_1, centers)
             beliefs.append(b_t)
-            b_t_1, l_t_1, c_t_1 = b_t, l_t, c_t
+            b_t_1, h_t_1, c_t_1 = b_t, h_t, c_t
 
         out = torch.stack(beliefs, 1)
         return out
