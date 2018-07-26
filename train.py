@@ -62,7 +62,7 @@ def train(model, loader, criterion, optimizer, device, scheduler=None, clip=None
 
             t.set_postfix(loss='{:05.3f}'.format(loss.item()), acc='{:05.3f}%'.format(acc * 100),
                           loss_avg='{:05.3f}'.format(loss_avg()), acc_avg='{:05.3f}%'.format(acc_avg() * 100),
-                          forward='{:05.3f}s'.format(time_avg()))
+                          time_avg='{:05.3f}s'.format(time_avg()))
             t.update()
 
         return loss_avg(), acc_avg()
