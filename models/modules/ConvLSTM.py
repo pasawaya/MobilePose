@@ -30,6 +30,7 @@ class ConvLSTM(nn.Module):
         o = F.sigmoid(self.o_x(x) + self.o_h(h_prev))
         g = F.sigmoid(self.g_x(x) + self.g_h(h_prev))
         f = F.sigmoid(self.f_x(x) + self.f_h(h_prev))
-        c_t = i.mul(g).add(f.mul(c_prev))
-        h_t = o.mul(F.tanh(c_t))
-        return h_t, c_t
+        
+        c = i.mul(g).add(f.mul(c_prev))
+        h = o.mul(F.tanh(c))
+        return h, c
