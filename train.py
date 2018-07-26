@@ -27,13 +27,16 @@ from models.losses.CoordinateLoss import CoordinateLoss
 def train(model, loader, criterion, optimizer, device, scheduler=None, clip=None, summary=None):
     loss_avg = RunningAverage()
     acc_avg = RunningAverage()
+    time_avg = RunningAverage()
 
     model.train()
 
     with tqdm(total=len(loader)) as t:
         for i, (frames, labels, centers, meta) in enumerate(loader):
             frames, labels, centers, meta = frames.to(device), labels.to(device), centers.to(device), meta.to(device)
+            start = time.time()
             outputs = model(frames, centers)
+            time_avg.update(time.time() - start)
             if isinstance(criterion, CoordinateLoss):
                 loss = criterion(*outputs, meta)
                 acc = accuracy(outputs[0], labels)
@@ -58,7 +61,8 @@ def train(model, loader, criterion, optimizer, device, scheduler=None, clip=None
                 summary.add_scalar_value('Train Loss', loss.item())
 
             t.set_postfix(loss='{:05.3f}'.format(loss.item()), acc='{:05.3f}%'.format(acc * 100),
-                          loss_avg='{:05.3f}'.format(loss_avg()), acc_avg='{:05.3f}%'.format(acc_avg() * 100))
+                          loss_avg='{:05.3f}'.format(loss_avg()), acc_avg='{:05.3f}%'.format(acc_avg() * 100),
+                          time_avg='{:05.3f}'.format(time_avg()))
             t.update()
 
         return loss_avg(), acc_avg()
