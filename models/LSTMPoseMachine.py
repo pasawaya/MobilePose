@@ -84,14 +84,12 @@ class Stage(nn.Module):
         self.lstm = ConvLSTM(lstm_size, 3, 1, True, device)
         self.generate = Generator(lstm_size, out_channels)
 
-    def forward(self, f_t, b_t_1, h_t_1, c_t_1, centers):
-        f_t = self.encode(f_t)
-        f_t = torch.cat([f_t, b_t_1, centers], dim=1)
-
-        h_t, c_t = self.lstm(f_t, h_t_1, c_t_1)
-
-        b_t = self.generate(h_t)
-        return b_t, h_t, c_t
+    def forward(self, x, b_prev, h_prev, c_prev, centers):
+        f = self.encode(x)
+        f = torch.cat([f, b_prev, centers], dim=1)
+        h, c = self.lstm(f, h_prev, c_prev)
+        b = self.generate(h)
+        return b, h, c
 
 
 class PretrainLPM(nn.Module):
@@ -101,27 +99,25 @@ class PretrainLPM(nn.Module):
         self.T = T
 
         self.process = Processor(in_channels, out_channels)
-        self.stage_1 = Stage(in_channels, hidden_channels, out_channels, device)
-        self.stage_t = Stage(in_channels, hidden_channels, out_channels, device)
+        self.stage = Stage(in_channels, hidden_channels, out_channels, device)
 
         self.apply(initialize_weights_kaiming)
 
         # Per http://proceedings.mlr.press/v37/jozefowicz15.pdf
-        self.stage_t.lstm.f_x.bias.data.fill_(1.0)
-        self.stage_t.lstm.f_h.bias.data.fill_(1.0)
+        self.stage.lstm.f_x.bias.data.fill_(1.0)
+        self.stage.lstm.f_h.bias.data.fill_(1.0)
 
     def forward(self, x, centers):
         centers = F.avg_pool2d(centers, 9, stride=8)
 
         b_0 = self.process(x)
-        b_1, h_1, c_1 = self.stage_1(x, b_0, None, None, centers)
-        beliefs = [b_0, b_1]
+        beliefs = [b_0]
 
-        b_t_1, h_t_1, c_t_1 = b_1, h_1, c_1
-        for t in range(self.T - 1):
-            b_t, h_t, c_t = self.stage_t(x, b_t_1, h_t_1, c_t_1, centers)
-            beliefs.append(b_t)
-            b_t_1, h_t_1, c_t_1 = b_t, h_t, c_t
+        b_prev, h_prev, c_prev = b_0, None, None
+        for t in range(self.T):
+            b, h, c = self.stage(x, b_prev, h_prev, c_prev, centers)
+            beliefs.append(b)
+            b_prev, h_prev, c_prev = b, h, c
 
         out = torch.stack(beliefs, 1)
         return out
