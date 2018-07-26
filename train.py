@@ -1,7 +1,8 @@
 
+import time
 import argparse
 import pycrayon
-import time
+import configargparse
 import torch.nn.utils as utils
 from tqdm import tqdm
 from datasets.MPII import MPII
@@ -82,15 +83,14 @@ def validate(model, loader, criterion, device):
 
 
 def main(args):
-    model_dir = 'experiments'
     start_time_prefix = str(int(time.time()))[-4:] + "_"
-    print('\nCheckpoint prefix will be ' + start_time_prefix)
+    print('Checkpoint prefix will be ' + start_time_prefix)
 
     device_name = 'cpu' if args.gpu is None else 'cuda:' + str(args.gpu)
     device = torch.device(device_name)
     loader_args = {'num_workers': 1, 'pin_memory': True} if 'cuda' in device_name else {}
 
-    mpii_root = 'data/MPII'
+    mpii_root = os.path.join(args.data_dir, 'MPII')
     mean_name = 'means.npy'
     mean_path = os.path.join(mpii_root, mean_name)
     if not os.path.isfile(mean_path):
@@ -133,10 +133,10 @@ def main(args):
     model = model.to(device)
     criterion = criterion.to(device)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = None
-    if args.lr_step_interval:
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_step_interval, gamma=args.gamma)
+    if args.step_size:
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.step_size, gamma=args.gamma)
 
     summary = None
     if args.host is not None:
@@ -150,7 +150,7 @@ def main(args):
     start_epoch = 0
 
     if args.checkpoint_name is not None:
-        checkpoint = load_checkpoint(model_dir, args.checkpoint_name, model, optimizer)
+        checkpoint = load_checkpoint(args.model_dir, args.checkpoint_name, model, optimizer)
         start_epoch = checkpoint['epoch']
         best_acc = checkpoint['accuracy']
         if args.host is not None:
@@ -175,37 +175,40 @@ def main(args):
                          'state_dict': model.state_dict(),
                          'optimizer': optimizer.state_dict(),
                          'accuracy': valid_acc,
-                         'loss': valid_loss}, is_best=is_best, checkpoint=model_dir, prefix=start_time_prefix)
+                         'loss': valid_loss}, is_best=is_best, checkpoint=args.model_dir, prefix=start_time_prefix)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = configargparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add('--config', is_config_file=True, help='config file path')
 
     # Architecture
-    parser.add_argument('--model', default='hourglass', type=str, choices=['hourglass', 'lpm', 'coord_lpm'])
-    parser.add_argument('--t', default=10, type=int)
-    parser.add_argument('--depth', default=4, type=int)
-    parser.add_argument('--block', default='residual', type=str, choices=['residual', 'inverted', 'conv'])
+    parser.add('--model', default='hourglass', type=str, choices=['hourglass', 'lpm', 'coord_lpm'], help='model type')
+    parser.add('--t', default=10, type=int, help='length of input sequences (i.e. # frames)')
+    parser.add('--depth', default=4, type=int, help='depth of each hourglass module')
+    parser.add('--block', default='res', type=str, choices=['res', 'inv', 'conv'], help='type of hourglass blocks')
 
     # Training
-    parser.add_argument('--lr', default=1e-3, type=float)
-    parser.add_argument('--lr_step_interval', default=None, type=int)   # 90k seems best for lpm
-    parser.add_argument('--gamma', default=1, type=float)
-    parser.add_argument('--batch_size', default=4, type=int)
-    parser.add_argument('--decay', default=0, type=float)
-    parser.add_argument('--max_epochs', default=5000, type=int)
-    parser.add_argument('--resolution', default=256, type=int)
-    parser.add_argument('--subset_size', default=None, type=int)
-    parser.add_argument('--clip', default=None, type=float)
+    parser.add('--lr', default=1e-3, type=float, help='base learning rate')
+    parser.add('--step_size', default=None, type=int, help='period of learning rate decay')
+    parser.add('--gamma', default=1, type=float, help='multiplicative factor of learning rate decay')
+    parser.add('--batch_size', default=4, type=int, help='training batch size')
+    parser.add('--weight_decay', default=0, type=float, help='l2 decay coefficient')
+    parser.add('--max_epochs', default=5000, type=int, help='maximum training epochs')
+    parser.add('--resolution', default=256, type=int, help='model input image resolution')
+    parser.add('--subset_size', default=None, type=int, help='size of training subset (for sanity overfitting)')
+    parser.add('--clip', default=None, type=float, help='maximum norm of gradients')
 
     # Tensorboard
-    parser.add_argument('--experiment', default='Training', type=str)
-    parser.add_argument('--host', default=None, type=str)
+    parser.add('--experiment', default='Pose Estimation Training', type=str, help='name of Tensorboard experiment')
+    parser.add('--host', default=None, type=str, help='Tensorboard host name')
 
     # Checkpoints
-    parser.add_argument('--checkpoint_name', default=None, type=str)
+    parser.add('--checkpoint_name', default=None, type=str, help='checkpoint file name in experiments/ to resume from')
+    parser.add('--model_dir', default='experiments', type=str, help='directory to store/load checkpoints from')
 
     # Other
-    parser.add_argument('--gpu', default=None, type=int)
+    parser.add('--data_dir', default='data', type=str, help='directory containing data')
+    parser.add('--gpu', default=None, type=int, help='gpu id to perform training on')
 
     main(parser.parse_args())
