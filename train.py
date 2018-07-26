@@ -86,7 +86,7 @@ def main(args):
     start_time_prefix = str(int(time.time()))[-4:] + "_"
     print('\nCheckpoint prefix will be ' + start_time_prefix)
 
-    device_name = 'cpu' if args.gpu is None else 'cuda:' + args.gpu
+    device_name = 'cpu' if args.gpu is None else 'cuda:' + str(args.gpu)
     device = torch.device(device_name)
     loader_args = {'num_workers': 1, 'pin_memory': True} if 'cuda' in device_name else {}
 
