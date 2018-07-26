@@ -126,7 +126,7 @@ def main(args):
     if args.model == 'hourglass':
         model = PretrainRecurrentStackedHourglass(3, 64, train_dataset.n_joints + 1, device, block, T=args.t, depth=args.depth)
     elif args.model == 'lpm':
-        model = PretrainLPM(3, 32, train_dataset.n_joints + 1, T=args.t)
+        model = PretrainLPM(3, 32, train_dataset.n_joints + 1, device, T=args.t)
     else:
         model = PretrainCoordinateLPM(3, 32, train_dataset.n_joints, T=args.t)
         criterion = CoordinateLoss()
