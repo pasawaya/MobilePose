@@ -39,7 +39,7 @@ def train(model, loader, criterion, optimizer, device, scheduler=None, clip=None
             time_avg.update(time.time() - start)
             if isinstance(criterion, CoordinateLoss):
                 loss = criterion(*outputs, meta)
-                acc = accuracy(outputs[0], labels)
+                acc = coord_accuracy(outputs[1], meta)
             else:
                 loss = criterion(outputs, labels)
                 acc = accuracy(outputs, labels)
