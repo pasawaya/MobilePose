@@ -78,7 +78,7 @@ def validate(model, loader, criterion, device, r):
 
         outputs = model(frames, centers)
         if isinstance(criterion, CoordinateLoss):
-            loss = criterion(*outputs, meta)
+            loss = criterion(*outputs, meta, device)
             acc = coord_accuracy(outputs[1], meta, r=r)
         else:
             loss = criterion(outputs, labels)
