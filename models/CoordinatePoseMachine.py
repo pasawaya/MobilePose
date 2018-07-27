@@ -33,9 +33,9 @@ class Processor(nn.Module):
 
     def forward(self, x):
         b = self.process(x)
-        map = dsntnn.flat_softmax(b)
-        coords = dsntnn.dsnt(map)
-        return b, map, coords
+        b = dsntnn.flat_softmax(b)
+        c = dsntnn.dsnt(b)
+        return b, c
 
 
 class Encoder(nn.Module):
@@ -94,10 +94,10 @@ class Stage(nn.Module):
         h, c = self.lstm(f, h_prev, c_prev)
         b = self.generate(h)
 
-        map = dsntnn.flat_softmax(b)
-        coords = dsntnn.dsnt(map)
+        b = dsntnn.flat_softmax(b)
+        coords = dsntnn.dsnt(b)
 
-        return b, h, c, map, coords
+        return b, h, c, coords
 
 
 class CoordinateLPM(nn.Module):
@@ -118,15 +118,15 @@ class CoordinateLPM(nn.Module):
     def forward(self, x, centers):
         centers = F.avg_pool2d(centers, 9, stride=8)
 
-        b_0, map, coords = self.process(x)
-        heatmaps = [map]
+        b_0, coords = self.process(x)
+        beliefs = [b_0]
         coordinates = [coords]
 
         b_prev, h_prev, c_prev = b_0, None, None
         for t in range(self.T):
-            b, h, c, map, coords = self.stage(x, b_prev, h_prev, c_prev, centers)
+            b, h, c, coords = self.stage(x, b_prev, h_prev, c_prev, centers)
             b_prev, h_prev, c_prev = b, h, c
-            heatmaps.append(map)
+            beliefs.append(b)
             coordinates.append(coords)
 
-        return torch.stack(heatmaps, 1), torch.stack(coordinates, 1)
+        return torch.stack(beliefs, 1), torch.stack(coordinates, 1)
