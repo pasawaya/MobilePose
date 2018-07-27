@@ -24,7 +24,7 @@ from models.losses.MSESequenceLoss import MSESequenceLoss
 from models.losses.CoordinateLoss import CoordinateLoss
 
 
-def train(model, loader, criterion, optimizer, device, scheduler=None, clip=None, summary=None):
+def train(model, loader, criterion, optimizer, device, r, scheduler=None, clip=None, summary=None):
     loss_avg = RunningAverage()
     acc_avg = RunningAverage()
     time_avg = RunningAverage()
@@ -39,10 +39,10 @@ def train(model, loader, criterion, optimizer, device, scheduler=None, clip=None
             time_avg.update(time.time() - start)
             if isinstance(criterion, CoordinateLoss):
                 loss = criterion(*outputs, meta)
-                acc = coord_accuracy(outputs[1], meta)
+                acc = coord_accuracy(outputs[1], meta, r=r)
             else:
                 loss = criterion(outputs, labels)
-                acc = accuracy(outputs, labels)
+                acc = accuracy(outputs, labels, r=r)
 
             optimizer.zero_grad()
             loss.backward()
@@ -68,17 +68,21 @@ def train(model, loader, criterion, optimizer, device, scheduler=None, clip=None
         return loss_avg(), acc_avg()
 
 
-def validate(model, loader, criterion, device):
+def validate(model, loader, criterion, device, r):
     loss_avg = RunningAverage()
     acc_avg = RunningAverage()
 
     model.eval()
-    for i, (frames, labels, centers, _) in enumerate(loader):
-        frames, labels, centers = frames.to(device), labels.to(device), centers.to(device)
+    for i, (frames, labels, centers, meta) in enumerate(loader):
+        frames, labels, centers, meta = frames.to(device), labels.to(device), centers.to(device), meta.to(device)
 
         outputs = model(frames, centers)
-        loss = criterion(outputs, labels)
-        acc = accuracy(outputs, labels)
+        if isinstance(criterion, CoordinateLoss):
+            loss = criterion(*outputs, meta)
+            acc = coord_accuracy(outputs[1], meta, r=r)
+        else:
+            loss = criterion(outputs, labels)
+            acc = accuracy(outputs, labels, r=r)
 
         loss_avg.update(loss.item())
         acc_avg.update(acc)
@@ -163,8 +167,9 @@ def main(args):
 
     for epoch in range(start_epoch, args.max_epochs):
         print('\n[epoch ' + str(epoch) + ']')
-        train_loss, train_acc = train(model, train_loader, criterion, optimizer, device, scheduler, args.clip, summary)
-        valid_loss, valid_acc = validate(model, valid_loader, criterion, device)
+        train_loss, train_acc = train(model, train_loader, criterion, optimizer, device, args.pck_r, scheduler,
+                                      args.clip, summary)
+        valid_loss, valid_acc = validate(model, valid_loader, criterion, device, args.pck_r)
 
         if args.host is not None:
             summary.add_scalar_value('Epoch Train Loss', train_loss)
@@ -215,5 +220,6 @@ if __name__ == '__main__':
     # Other
     parser.add('--data_dir', default='data', type=str, help='directory containing data')
     parser.add('--gpu', default=None, type=int, help='gpu id to perform training on')
+    parser.add('--pck_r', default=0.2, type=float, help='r coefficient for pck computation')
 
     main(parser.parse_args())
