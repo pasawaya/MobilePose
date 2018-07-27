@@ -31,8 +31,8 @@ class Processor(nn.Module):
             nn.Conv2d(512, out_channels, 1, padding=0),
         )
 
-    def forward(self, x_t):
-        b = self.process(x_t)
+    def forward(self, x):
+        b = self.process(x)
         map = dsntnn.flat_softmax(b)
         coords = dsntnn.dsnt(map)
         return b, map, coords
@@ -55,8 +55,8 @@ class Encoder(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-    def forward(self, x_t):
-        return self.encode(x_t)
+    def forward(self, x):
+        return self.encode(x)
 
 
 class Generator(nn.Module):
@@ -74,8 +74,8 @@ class Generator(nn.Module):
             nn.Conv2d(128, out_channels, 1, padding=0),
         )
 
-    def forward(self, h_t):
-        return self.generate(h_t)
+    def forward(self, x):
+        return self.generate(x)
 
 
 class Stage(nn.Module):
