@@ -8,8 +8,8 @@ class CoordinateLoss(nn.Module):
     def __init__(self):
         super(CoordinateLoss, self).__init__()
 
-    def forward(self, heatmaps, coords, targets):
-        out = [31, 31]
+    def forward(self, heatmaps, coords, targets, device):
+        out = torch.Tensor([31, 31]).to(device)
         batch_size = coords.shape[0]
         n_stages = coords.shape[1]
 
@@ -17,7 +17,7 @@ class CoordinateLoss(nn.Module):
             targets = torch.unsqueeze(targets, 1)
             targets = targets.repeat(1, n_stages, 1, 1)
 
-        targets = (targets.div(255) * 2 + 1) / torch.Tensor(out) - 1
+        targets = (targets.div(255) * 2 + 1) / out - 1
 
         losses = []
         for i in range(batch_size):
