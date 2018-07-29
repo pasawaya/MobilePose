@@ -112,18 +112,15 @@ def compute_label_map(x, y, visibility, size, sigma, stride, offset, background)
     start = (stride / 2.) - 0.5
     for t in range(t):
         for p in range(n_joints):
-            if visibility[t, p] > 0:
-                center_x, center_y = x[t, p], y[t, p]
-                X, Y = np.meshgrid(np.linspace(0, label_size, label_size), np.linspace(0, label_size, label_size))
-                X = (X - 1) * stride + start - center_x
-                Y = (Y - 1) * stride + start - center_y
-                d2 = X * X + Y * Y
-                exp = d2 * 0.5 / sigma / sigma
-                label = np.exp(-exp)
-                label[label < 0.01] = 0
-                label[label > 1] = 1
-            else:
-                label = np.zeros((label_size, label_size))
+            center_x, center_y = x[t, p], y[t, p]
+            X, Y = np.meshgrid(np.linspace(0, label_size, label_size), np.linspace(0, label_size, label_size))
+            X = (X - 1) * stride + start - center_x
+            Y = (Y - 1) * stride + start - center_y
+            d2 = X * X + Y * Y
+            exp = d2 * 0.5 / sigma / sigma
+            label = np.exp(-exp)
+            label[label < 0.01] = 0
+            label[label > 1] = 1
             label_map[t, p, :, :] = label
     return torch.from_numpy(label_map).float()
 

@@ -96,10 +96,6 @@ class MPII(Dataset):
                                 elif p_id not in ignored:
                                     joints[p_id] = (p_x, p_y, p_vis)
 
-                            for p in range(mpii_joints - len(ignored)):
-                                if str(p) not in joints:
-                                    joints[str(p)] = (-1, -1, 0)
-
                             data[i] = {'image_path': image_path,
                                        'joints': joints}
                             i += 1
