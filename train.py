@@ -110,8 +110,11 @@ def main(args):
         np.save(mean_path, np.array([mean, std]))
 
     mean, std = np.load(os.path.join(mpii_root, 'means.npy'))
-    train_transformer = ImageTransformer(mean=mean, std=std)
-    valid_transformer = ImageTransformer(p_scale=0.0, p_flip=0.0, p_rotate=0.0, mean=mean, std=std)
+    train_transformer = ImageTransformer(output_size=args.resolution,
+                                         mean=mean, std=std)
+    valid_transformer = ImageTransformer(output_size=args.resolution,
+                                         p_scale=0.0, p_flip=0.0, p_rotate=0.0,
+                                         mean=mean, std=std)
 
     stride = 4 if args.model == 'hourglass' else 8
     offset = 0 if args.model == 'hourglass' else -1
