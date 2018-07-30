@@ -15,7 +15,7 @@ from utils.dataset_utils import *
 from utils.evaluation import accuracy
 
 from models.RecurrentStackedHourglass import PretrainRecurrentStackedHourglass
-from models.LSTMPoseMachine import PretrainLPM
+from models.LSTMPoseMachine import LPM
 from models.CoordinatePoseMachine import CoordinateLPM
 from models.modules.ResidualBlock import ResidualBlock
 from models.modules.InvertedResidualBlock import InvertedResidualBlock
@@ -134,7 +134,7 @@ def main(args):
     if args.model == 'hourglass':
         model = PretrainRecurrentStackedHourglass(3, 64, train_dataset.n_joints + 1, device, block, T=args.t, depth=args.depth)
     elif args.model == 'lpm':
-        model = PretrainLPM(3, 32, train_dataset.n_joints + 1, device, T=args.t)
+        model = LPM(3, 32, train_dataset.n_joints + 1, device, T=args.t)
     else:
         model = CoordinateLPM(3, 32, train_dataset.n_joints, device, T=args.t)
         criterion = CoordinateLoss()

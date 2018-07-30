@@ -92,9 +92,9 @@ class Stage(nn.Module):
         return b, h, c
 
 
-class PretrainLPM(nn.Module):
+class LPM(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels, device, T=5):
-        super(PretrainLPM, self).__init__()
+        super(LPM, self).__init__()
 
         self.T = T
 
