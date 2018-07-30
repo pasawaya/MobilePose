@@ -4,56 +4,23 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class ConvLSTM(nn.Module):
-    def __init__(self, hidden_size, kernel_size, pad, bias, device):
-        super(ConvLSTM, self).__init__()
-
-        self.device = device
-
-        self.i_x = nn.Conv2d(hidden_size, hidden_size, kernel_size, padding=pad, bias=bias)
-        self.o_x = nn.Conv2d(hidden_size, hidden_size, kernel_size, padding=pad, bias=bias)
-        self.g_x = nn.Conv2d(hidden_size, hidden_size, kernel_size, padding=pad, bias=bias)
-        self.f_x = nn.Conv2d(hidden_size, hidden_size, kernel_size, padding=pad, bias=bias)
-
-        self.i_h = nn.Conv2d(hidden_size, hidden_size, kernel_size, padding=pad, bias=bias)
-        self.o_h = nn.Conv2d(hidden_size, hidden_size, kernel_size, padding=pad, bias=bias)
-        self.g_h = nn.Conv2d(hidden_size, hidden_size, kernel_size, padding=pad, bias=bias)
-        self.f_h = nn.Conv2d(hidden_size, hidden_size, kernel_size, padding=pad, bias=bias)
-
-    def forward(self, x, h_prev, c_prev):
-        if h_prev is None:
-            h_prev = torch.zeros_like(x).to(self.device)
-        if c_prev is None:
-            c_prev = torch.zeros_like(x).to(self.device)
-
-        i = F.sigmoid(self.i_x(x) + self.i_h(h_prev))
-        o = F.sigmoid(self.o_x(x) + self.o_h(h_prev))
-        g = F.sigmoid(self.g_x(x) + self.g_h(h_prev))
-        f = F.sigmoid(self.f_x(x) + self.f_h(h_prev))
-
-        c = i.mul(g).add(f.mul(c_prev))
-        h = o.mul(F.tanh(c))
-        return h, c
-
-
 # Source: https://github.com/ndrplz/ConvLSTM_pytorch/blob/master/convlstm.py
 class ConvLSTMCell(nn.Module):
-    def __init__(self, input_size, input_dim, hidden_dim, kernel_size, bias):
+    def __init__(self, input_dim, hidden_dim, kernel_size, device):
         super(ConvLSTMCell, self).__init__()
 
-        self.height, self.width = input_size
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
+        self.device = device
 
         self.kernel_size = kernel_size
         self.padding = kernel_size[0] // 2, kernel_size[1] // 2
-        self.bias = bias
 
         self.conv = nn.Conv2d(in_channels=self.input_dim + self.hidden_dim,
                               out_channels=4 * self.hidden_dim,
                               kernel_size=self.kernel_size,
                               padding=self.padding,
-                              bias=self.bias)
+                              bias=True)
 
     def forward(self, input_tensor, cur_state):
         h_cur, c_cur = cur_state
@@ -62,67 +29,54 @@ class ConvLSTMCell(nn.Module):
 
         combined_conv = self.conv(combined)
         cc_i, cc_f, cc_o, cc_g = torch.split(combined_conv, self.hidden_dim, dim=1)
-        i = torch.sigmoid(cc_i)
-        f = torch.sigmoid(cc_f)
-        o = torch.sigmoid(cc_o)
-        g = torch.tanh(cc_g)
+        i = F.sigmoid(cc_i)
+        f = F.sigmoid(cc_f)
+        o = F.sigmoid(cc_o)
+        g = F.tanh(cc_g)
 
-        c_next = f * c_cur + i * g
-        h_next = o * torch.tanh(c_next)
+        c_next = f.mul(c_cur) + i.mul(g)
+        h_next = o.mul(F.tanh(c_next))
 
         return h_next, c_next
 
-    def init_hidden(self, batch_size):
-        return (Variable(torch.zeros(batch_size, self.hidden_dim, self.height, self.width)).cuda(),
-                Variable(torch.zeros(batch_size, self.hidden_dim, self.height, self.width)).cuda())
+    def init_hidden(self, x):
+        return torch.zeros_like(x).to(self.device), torch.zeros_like(x).to(self.device)
 
 
-class ConvLSTMPytorch(nn.Module):
-
-    def __init__(self, input_size, input_dim, hidden_dim, kernel_size, num_layers,
-                 batch_first=False, bias=True, return_all_layers=False):
+class ConvLSTM(nn.Module):
+    def __init__(self, input_size, hidden_size, kernel_size, n_layers, device, return_all_layers=False):
         super(ConvLSTM, self).__init__()
 
         self._check_kernel_size_consistency(kernel_size)
 
-        # Make sure that both `kernel_size` and `hidden_dim` are lists having len == num_layers
-        kernel_size = self._extend_for_multilayer(kernel_size, num_layers)
-        hidden_dim = self._extend_for_multilayer(hidden_dim, num_layers)
-        if not len(kernel_size) == len(hidden_dim) == num_layers:
+        kernel_size = self._extend_for_multilayer(kernel_size, n_layers)
+        hidden_size = self._extend_for_multilayer(hidden_size, n_layers)
+        if not len(kernel_size) == len(hidden_size) == n_layers:
             raise ValueError('Inconsistent list length.')
 
-        self.height, self.width = input_size
-
-        self.input_dim = input_dim
-        self.hidden_dim = hidden_dim
+        self.input_dim = input_size
+        self.hidden_dim = hidden_size
         self.kernel_size = kernel_size
-        self.num_layers = num_layers
-        self.batch_first = batch_first
-        self.bias = bias
+        self.num_layers = n_layers
         self.return_all_layers = return_all_layers
+        self.device = device
 
         cell_list = []
         for i in range(0, self.num_layers):
             cur_input_dim = self.input_dim if i == 0 else self.hidden_dim[i - 1]
 
-            cell_list.append(ConvLSTMCell(input_size=(self.height, self.width),
-                                          input_dim=cur_input_dim,
+            cell_list.append(ConvLSTMCell(input_dim=cur_input_dim,
                                           hidden_dim=self.hidden_dim[i],
                                           kernel_size=self.kernel_size[i],
-                                          bias=self.bias))
+                                          device=self.device))
 
         self.cell_list = nn.ModuleList(cell_list)
 
     def forward(self, input_tensor, hidden_state=None):
-        if not self.batch_first:
-            # (t, b, c, h, w) -> (b, t, c, h, w)
-            input_tensor.permute(1, 0, 2, 3, 4)
-
-        # Implement stateful ConvLSTM
         if hidden_state is not None:
             raise NotImplementedError()
         else:
-            hidden_state = self._init_hidden(batch_size=input_tensor.size(0))
+            hidden_state = self._init_hidden(input_tensor)
 
         layer_output_list = []
         last_state_list = []
@@ -151,10 +105,10 @@ class ConvLSTMPytorch(nn.Module):
 
         return layer_output_list, last_state_list
 
-    def _init_hidden(self, batch_size):
+    def _init_hidden(self, x):
         init_states = []
         for i in range(self.num_layers):
-            init_states.append(self.cell_list[i].init_hidden(batch_size))
+            init_states.append(self.cell_list[i].init_hidden(x))
         return init_states
 
     @staticmethod
