@@ -34,6 +34,9 @@ def train(model, loader, criterion, optimizer, device, r, scheduler=None, clip=N
     with tqdm(total=len(loader)) as t:
         for i, (frames, labels, centers, meta) in enumerate(loader):
             frames, labels, centers, meta = frames.to(device), labels.to(device), centers.to(device), meta.to(device)
+            print(frames.shape)
+            print(labels.shape)
+            print(centers.shape)
             start = time.time()
             outputs = model(frames, centers)
             time_avg.update(time.time() - start)

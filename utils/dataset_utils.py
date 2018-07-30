@@ -98,11 +98,10 @@ def visualize_truth(video, labels):
         plt.show()
 
 
-def compute_label_map(x, y, visibility, size, sigma, stride, offset, background):
+def compute_label_map(x, y, size, sigma, stride, offset, background):
     if len(x.shape) < 2:
         x = np.expand_dims(x, 0)
         y = np.expand_dims(y, 0)
-        visibility = np.expand_dims(visibility, 0)
 
     t = x.shape[0]
     n_joints = x.shape[1]
@@ -125,7 +124,7 @@ def compute_label_map(x, y, visibility, size, sigma, stride, offset, background)
     return torch.from_numpy(label_map).float()
 
 
-def compute_center_map(size=256, sigma=21):
+def compute_center_map(size, sigma=21):
     shape = (size, size)
     x, y = size / 2, size / 2
     X, Y = np.meshgrid(np.linspace(0, shape[0], shape[0]), np.linspace(0, shape[1], shape[1]))
