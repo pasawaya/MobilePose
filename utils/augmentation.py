@@ -9,7 +9,7 @@ class ImageTransformer(object):
     def __init__(self, output_size=256, r_pad=3.,
                  p_scale=1.0, p_flip=0.5, p_rotate=1.0,
                  min_scale=0.7, max_scale=1.3,
-                 max_degree=20,
+                 max_degree=40,
                  min_jitter=0.8, max_jitter=1.2,
                  mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)):
 
