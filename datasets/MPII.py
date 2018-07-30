@@ -56,7 +56,7 @@ class MPII(Dataset):
             image, x, y, visibility = self.transformer(image, x, y, visibility)
 
         label_map = compute_label_map(x, y, visibility, self.output_size, self.sigma, self.stride, self.offset, self.background)
-        center_map = compute_center_map(self.output_size)
+        center_map = compute_center_map(size=self.output_size)
         x, y = np.expand_dims(x, 1), np.expand_dims(y, 1)
         meta = torch.from_numpy(np.squeeze(np.hstack([x, y]))).float()
         return image, label_map, center_map, meta
