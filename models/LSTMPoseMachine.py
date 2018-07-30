@@ -86,10 +86,6 @@ class Stage(nn.Module):
 
     def forward(self, x, b_prev, h_prev, c_prev, centers):
         f = self.encode(x)
-        print('\n')
-        print(f.shape)
-        print(b_prev.shape)
-        print(centers.shape)
         f = torch.cat([f, b_prev, centers], dim=1)
         h, c = self.lstm(f, h_prev, c_prev)
         b = self.generate(h)
