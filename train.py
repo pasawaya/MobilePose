@@ -99,16 +99,19 @@ def main(args):
     device = torch.device(device_name)
     loader_args = {'num_workers': 1, 'pin_memory': True} if 'cuda' in device_name else {}
 
-    mpii_root = os.path.join(args.data_dir, 'MPII')
+    dataset_name = 'PennAction' if args.dataset == 'penn' else 'MPII'
+    root = os.path.join(args.data_dir, dataset_name)
+    dataset = PennAction if args.dataset == 'penn' else MPII
+    transformer = VideoTransformer if args.dataset == 'penn' else ImageTransformer
+
     mean_name = 'means.npy'
-    mean_path = os.path.join(mpii_root, mean_name)
+    mean_path = os.path.join(root, mean_name)
     if not os.path.isfile(mean_path):
-        mpii = MPII(root=mpii_root, transformer=None, output_size=args.resolution, train=True)
-        mean, std = compute_mean(mpii)
+        temp = dataset(args.t, root=root, transformer=None, output_size=args.resolution, train=True)
+        mean, std = compute_mean(temp)
         np.save(mean_path, np.array([mean, std]))
 
-    mean, std = np.load(os.path.join(mpii_root, 'means.npy'))
-    transformer = VideoTransformer if args.dataset == 'penn' else ImageTransformer
+    mean, std = np.load(os.path.join(root, 'means.npy'))
     train_transformer = transformer(output_size=args.resolution, mean=mean, std=std)
     valid_transformer = transformer(output_size=args.resolution,
                                     p_scale=0.0, p_flip=0.0, p_rotate=0.0,
@@ -117,11 +120,10 @@ def main(args):
     stride = 4 if args.model == 'hourglass' else 8
     offset = 0 if args.model == 'hourglass' else -1
     include_background = args.model != 'coord_lpm'
-    dataset = PennAction if args.dataset == 'penn' else MPII
-    train_dataset = dataset(args.t, root=mpii_root, transformer=train_transformer, output_size=args.resolution,
+    train_dataset = dataset(args.t, root=root, transformer=train_transformer, output_size=args.resolution,
                             train=True, subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
                             include_background=include_background)
-    valid_dataset = dataset(args.t, root=mpii_root, transformer=valid_transformer, output_size=args.resolution,
+    valid_dataset = dataset(args.t, root=root, transformer=valid_transformer, output_size=args.resolution,
                             train=False, subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
                             include_background=include_background)
 
