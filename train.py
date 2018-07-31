@@ -116,11 +116,11 @@ def main(args):
     stride = 4 if args.model == 'hourglass' else 8
     offset = 0 if args.model == 'hourglass' else -1
     include_background = args.model != 'coord_lpm'
-    train_dataset = MPII(root=mpii_root, transformer=train_transformer, output_size=args.resolution, train=True,
-                         subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
+    train_dataset = MPII(args.t, root=mpii_root, transformer=train_transformer, output_size=args.resolution,
+                         train=True, subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
                          include_background=include_background)
-    valid_dataset = MPII(root=mpii_root, transformer=valid_transformer, output_size=args.resolution, train=False,
-                         subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
+    valid_dataset = MPII(args.t, root=mpii_root, transformer=valid_transformer, output_size=args.resolution,
+                         train=False, subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
                          include_background=include_background)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, **loader_args)

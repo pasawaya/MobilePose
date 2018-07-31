@@ -13,16 +13,15 @@ def accuracy(inputs, targets, r=0.2):
     n_correct = 0
     n_total = batch_size * n_stages * n_joints
 
-    gt = get_preds(torch.squeeze(targets, 1))
-
     for i in range(batch_size):
+        gt = get_preds(targets[i, :, :, :, :])
+        preds = get_preds(inputs[i, :, :, :, :])
+
         w = gt[i, :, 0].max() - gt[i, :, 0].min()
         h = gt[i, :, 1].max() - gt[i, :, 1].min()
         threshold = r * max(w, h)
 
-        curr_gt = torch.unsqueeze(gt[i], 0).repeat(n_stages, 1, 1)
-        curr_preds = get_preds(inputs[i])
-        scores = torch.norm(curr_preds.sub(curr_gt), dim=2).view(-1)
+        scores = torch.norm(preds.sub(gt), dim=2).view(-1)
         n_correct += scores.le(threshold).sum()
 
     return float(n_correct) / float(n_total)
