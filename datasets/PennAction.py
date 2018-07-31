@@ -41,7 +41,7 @@ class PennActionDataset(Dataset):
         x, y, visibility, bbox = self.load_annotation(idx)
 
         if self.transformer is not None:
-            frames, x, y, visibility = self.transformer(frames, x, y, visibility, bbox)
+            frames, x, y, visibility, bbox = self.transformer(frames, x, y, visibility, bbox)
 
         label_map = compute_label_map(x, y, self.output_size, self.sigma, self.stride, self.offset, self.background)
         center_map = compute_center_map(self.output_size)
