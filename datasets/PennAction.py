@@ -9,6 +9,8 @@ from utils.dataset_utils import *
 from skimage.io import imread
 from scipy.io import loadmat
 
+from utils.augmentation import *
+
 
 class PennActionDataset(Dataset):
     def __init__(self, T, root='../data/PennAction', transformer=None, output_size=256, train=True, subset_size=None,
@@ -58,6 +60,9 @@ class PennActionDataset(Dataset):
         vis = annotations['visibility'][start:start + self.T, :]
         bbox = annotations['bbox'][start:start + self.T, :]
 
+        x, y, vis = self.infer_neck_annotation(x, y, vis)
+        x, y, vis = self.reorder_joints(x, y, vis)
+
         return x, y, vis, bbox
 
     def load_video(self, idx):
@@ -91,8 +96,23 @@ class PennActionDataset(Dataset):
         with open(self.annotations_path, 'w') as out_file:
             json.dump(data, out_file)
 
+    @staticmethod
+    def infer_neck_annotation(x, y, vis):
+        neck_x = np.expand_dims(0.5 * x[:, 0] + 0.25 * (x[:, 1] + x[:, 2]), 1)
+        neck_y = np.expand_dims(0.2 * y[:, 0] + 0.4 * (y[:, 1] + y[:, 2]), 1)
+        neck_vis = np.expand_dims(np.floor((vis[:, 0] + vis[:, 1] + vis[:, 2]) / 3.), 1)
 
-dataset = PennActionDataset(5)
+        x = np.hstack([x, neck_x])
+        y = np.hstack([y, neck_y])
+        vis = np.hstack([vis, neck_vis])
+        return x, y, vis
+
+    @staticmethod
+    def reorder_joints(x, y, vis):
+        mpii_order = [12, 10, 8, 7, 9, 11, 3, 5, 13, 0, 6, 4, 2, 1]
+        return x[:, mpii_order], y[:, mpii_order], vis[:, mpii_order]
+
+
+transformer = VideoTransformer()
+dataset = PennActionDataset(5, transformer=transformer)
 frames, label_map, center_map, meta = dataset[0]
-print(label_map.shape)
-print(center_map.shape)

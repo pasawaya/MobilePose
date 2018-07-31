@@ -181,7 +181,7 @@ class VideoTransformer(Transformer):
         x_trans, y_trans, vis_trans = np.zeros_like(x), np.zeros_like(y), np.zeros_like(visibility)
         bboxes_trans = np.zeros_like(bboxes)
 
-        for t in len(frames):
+        for t in range(len(frames)):
             frame = frames[t]
             x_t, y_t, vis_t, bbox = x[t, :], y[t, :], visibility[t, :], bboxes[t, :]
 
