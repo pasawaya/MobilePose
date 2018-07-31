@@ -93,4 +93,6 @@ class PennActionDataset(Dataset):
 
 
 dataset = PennActionDataset(5)
-i = dataset[0]
+frames, label_map, center_map, meta = dataset[0]
+print(label_map.shape)
+print(center_map.shape)

@@ -5,7 +5,7 @@ from random import random, uniform
 import torch
 
 
-class ImageTransformer(object):
+class Transformer(object):
     def __init__(self, output_size=256, r_pad=3.,
                  p_scale=1.0, p_flip=0.5, p_rotate=1.0,
                  min_scale=0.7, max_scale=1.3,
@@ -28,29 +28,6 @@ class ImageTransformer(object):
         self.max_jitter = max_jitter
 
         self.pad = self.output_size / r_pad
-
-    def __call__(self, image, x, y, visibility, bbox=None):
-        if bbox is None:
-            x_min, x_max = max(0, np.amin(x) - self.pad), min(image.shape[1] - 1, np.amax(x) + self.pad)
-            y_min, y_max = max(0, np.amin(y) - self.pad), min(image.shape[0] - 1, np.amax(y) + self.pad)
-            bbox = np.array([x_min, y_min, x_max, y_max]).astype(np.int32)
-
-        if random() < self.p_scale:
-            f_xy = self.min_scale + (self.max_scale - self.min_scale) * random()
-            image, bbox, x, y = self.scale(image, bbox, x, y, f_xy)
-
-        if random() < self.p_flip:
-            image, bbox, x, y = self.flip(image, bbox, x, y)
-
-        image, _, x, y = self.crop(image, bbox, x, y, self.output_size)
-
-        if random() < self.p_rotate:
-            angle = -self.max_degree + 2 * self.max_degree * random()
-            image, bbox, x, y = self.rotate(image, bbox, x, y, angle)
-
-        image = self.color_jitter(image, self.min_jitter, self.max_jitter)
-        image = self.normalize(image, self.mean, self.std)
-        return self.to_torch(image), x, y, visibility
 
     @staticmethod
     def rotate(image, bbox, x, y, angle):
@@ -87,7 +64,7 @@ class ImageTransformer(object):
         # Scale to desired size
         side_length = max(w, h)
         f_xy = float(length) / float(side_length)
-        image, bbox, x, y = ImageTransformer.scale(image, bbox, x, y, f_xy)
+        image, bbox, x, y = Transformer.scale(image, bbox, x, y, f_xy)
 
         # Pad
         new_w, new_h = image.shape[1], image.shape[0]
@@ -133,7 +110,7 @@ class ImageTransformer(object):
         x_min, y_min, x_max, y_max = bbox
         bbox = np.array([w - x_max, y_min, w - x_min, y_max])
         x = w - x
-        x, y = ImageTransformer.swap_joints(x, y)
+        x, y = Transformer.swap_joints(x, y)
         return image, bbox, x, y
 
     @staticmethod
@@ -164,3 +141,70 @@ class ImageTransformer(object):
     def to_torch(image):
         image = np.moveaxis(image, 2, 0)
         return torch.from_numpy(image).float()
+
+
+class ImageTransformer(Transformer):
+    def __call__(self, image, x, y, visibility, bbox=None):
+        if bbox is None:
+            x_min, x_max = max(0, np.amin(x) - self.pad), min(image.shape[1] - 1, np.amax(x) + self.pad)
+            y_min, y_max = max(0, np.amin(y) - self.pad), min(image.shape[0] - 1, np.amax(y) + self.pad)
+            bbox = np.array([x_min, y_min, x_max, y_max]).astype(np.int32)
+
+        if random() < self.p_scale:
+            f_xy = self.min_scale + (self.max_scale - self.min_scale) * random()
+            image, bbox, x, y = self.scale(image, bbox, x, y, f_xy)
+
+        if random() < self.p_flip:
+            image, bbox, x, y = self.flip(image, bbox, x, y)
+
+        image, _, x, y = self.crop(image, bbox, x, y, self.output_size)
+
+        if random() < self.p_rotate:
+            angle = -self.max_degree + 2 * self.max_degree * random()
+            image, bbox, x, y = self.rotate(image, bbox, x, y, angle)
+
+        image = self.color_jitter(image, self.min_jitter, self.max_jitter)
+        image = self.normalize(image, self.mean, self.std)
+        return self.to_torch(image), x, y, visibility
+
+
+class VideoTransformer(Transformer):
+    def __call__(self, frames, x, y, visibility, bboxes):
+        scale = random() < self.p_scale
+        flip = random() < self.p_flip
+        rotate = random() < self.p_rotate
+
+        f_xy = self.min_scale + (self.max_scale - self.min_scale) * random()
+        angle = -self.max_degree + 2 * self.max_degree * random()
+
+        transformed = []
+        x_trans, y_trans, vis_trans = np.zeros_like(x), np.zeros_like(y), np.zeros_like(visibility)
+        bboxes_trans = np.zeros_like(bboxes)
+
+        for t in len(frames):
+            frame = frames[t]
+            x_t, y_t, vis_t, bbox = x[t, :], y[t, :], visibility[t, :], bboxes[t, :]
+
+            if scale:
+                frame, bbox, x_t, y_t = self.scale(frame, bbox, x_t, y_t, f_xy)
+
+            if flip:
+                frame, bbox, x_t, y_t = self.flip(frame, bbox, x_t, y_t)
+
+            frame, bbox, x_t, y_t = self.crop(frame, bbox, x_t, y_t, self.output_size)
+
+            if rotate:
+                frame, bbox, x_t, y_t = self.rotate(frame, bbox, x_t, y_t, angle)
+
+            frame = self.color_jitter(frame, self.min_jitter, self.max_jitter)
+            frame = self.normalize(frame, self.mean, self.std)
+            frame = self.to_torch(frame)
+            transformed.append(frame)
+
+            x_trans[t, :] = x_t
+            y_trans[t, :] = y_t
+            vis_trans[t, :] = vis_t
+            bboxes_trans[t, :] = bbox
+
+        frames = torch.stack(transformed, dim=0)
+        return frames, x_trans, y_trans, vis_trans, bboxes_trans
