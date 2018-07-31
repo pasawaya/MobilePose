@@ -10,7 +10,7 @@ from skimage.io import imread
 from scipy.io import loadmat
 
 
-class PennActionDataset(Dataset):
+class PennAction(Dataset):
     def __init__(self, T, root='../data/PennAction', transformer=None, output_size=256, train=True, subset_size=None,
                  sigma=7, stride=4, offset=0, include_background=True):
         self.T = T

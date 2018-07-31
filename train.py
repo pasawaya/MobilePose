@@ -6,11 +6,12 @@ import configargparse
 import torch.nn.utils as utils
 from tqdm import tqdm
 from datasets.MPII import MPII
+from datasets.PennAction import PennAction
 
 from torch.utils.data import DataLoader
 
 from utils.train_utils import *
-from utils.augmentation import ImageTransformer
+from utils.augmentation import *
 from utils.dataset_utils import *
 from utils.evaluation import accuracy
 
@@ -107,21 +108,22 @@ def main(args):
         np.save(mean_path, np.array([mean, std]))
 
     mean, std = np.load(os.path.join(mpii_root, 'means.npy'))
-    train_transformer = ImageTransformer(output_size=args.resolution,
-                                         mean=mean, std=std)
-    valid_transformer = ImageTransformer(output_size=args.resolution,
-                                         p_scale=0.0, p_flip=0.0, p_rotate=0.0,
-                                         mean=mean, std=std)
+    transformer = VideoTransformer if args.dataset == 'penn' else ImageTransformer
+    train_transformer = transformer(output_size=args.resolution, mean=mean, std=std)
+    valid_transformer = transformer(output_size=args.resolution,
+                                    p_scale=0.0, p_flip=0.0, p_rotate=0.0,
+                                    mean=mean, std=std)
 
     stride = 4 if args.model == 'hourglass' else 8
     offset = 0 if args.model == 'hourglass' else -1
     include_background = args.model != 'coord_lpm'
-    train_dataset = MPII(args.t, root=mpii_root, transformer=train_transformer, output_size=args.resolution,
-                         train=True, subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
-                         include_background=include_background)
-    valid_dataset = MPII(args.t, root=mpii_root, transformer=valid_transformer, output_size=args.resolution,
-                         train=False, subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
-                         include_background=include_background)
+    dataset = PennAction if args.dataset == 'penn' else MPII
+    train_dataset = dataset(args.t, root=mpii_root, transformer=train_transformer, output_size=args.resolution,
+                            train=True, subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
+                            include_background=include_background)
+    valid_dataset = dataset(args.t, root=mpii_root, transformer=valid_transformer, output_size=args.resolution,
+                            train=False, subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
+                            include_background=include_background)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, **loader_args)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=args.batch_size, shuffle=False, **loader_args)
@@ -224,5 +226,6 @@ if __name__ == '__main__':
     parser.add('--data_dir', default='data', type=str, help='directory containing data')
     parser.add('--gpu', default=None, type=int, help='gpu id to perform training on')
     parser.add('--pck_r', default=0.2, type=float, help='r coefficient for pck computation')
+    parser.add('--dataset', default='penn', type=str, choices=['penn', 'mpii'], help='dataset to train on')
 
     main(parser.parse_args())
