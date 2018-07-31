@@ -62,7 +62,7 @@ class MPII(Dataset):
         meta = torch.from_numpy(np.squeeze(np.hstack([x, y]))).float()
 
         image = torch.unsqueeze(image, 0).repeat(self.T, 1, 1, 1)
-        label_map = label_map.repeat(self.T + 1, 1, 1, 1)
+        label_map = label_map.repeat(self.T, 1, 1, 1)
         return image, label_map, center_map, meta
 
     def generate_annotations(self):

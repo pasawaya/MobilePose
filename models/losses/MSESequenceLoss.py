@@ -10,5 +10,6 @@ class MSESequenceLoss(nn.Module):
     def forward(self, inputs, targets):
         T = inputs.shape[1]
         if targets.shape[1] != T:
-            targets = targets.repeat(1, T, 1, 1, 1)
+            f_0 = torch.unsqueeze(targets[:, 0, :, :, :], 1)
+            targets = torch.cat([f_0, targets], dim=1)
         return torch.mean(inputs.sub(targets) ** 2)
