@@ -10,6 +10,10 @@ def accuracy(inputs, targets, r=0.2):
     inputs = inputs.detach()
     targets = targets.detach()
 
+    if targets.shape[1] != n_stages:
+        f_0 = torch.unsqueeze(targets[:, 0, :, :, :], 1)
+        targets = torch.cat([f_0, targets], dim=1)
+
     n_correct = 0
     n_total = batch_size * n_stages * n_joints
 
