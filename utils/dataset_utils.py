@@ -23,16 +23,6 @@ def compute_mean(dataset):
     return mean, std
 
 
-def to_numpy(data):
-    n = len(data)
-    x, y, vis = np.zeros(n), np.zeros(n), np.zeros(n)
-    for p in range(n):
-        x[p] = data[str(p)][0]
-        y[p] = data[str(p)][1]
-        vis[p] = data[str(p)][2]
-    return x, y, vis
-
-
 def visualize_input(image, x, y, vis):
     limbs = [(0, 1), (1, 2), (2, 3), (2, 8), (3, 8), (3, 4), (4, 5), (8, 9), (8, 12),
              (8, 13), (10, 11), (11, 12), (12, 13), (6, 7), (6, 13)]

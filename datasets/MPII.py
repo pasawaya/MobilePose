@@ -51,7 +51,7 @@ class MPII(Dataset):
         labels = self.annotations[str(idx)]['joints']
 
         image = imread(path).astype(np.float32)
-        x, y, visibility = to_numpy(labels)
+        x, y, visibility = self.dict_to_numpy(labels)
 
         if self.transformer is not None:
             image, x, y, visibility = self.transformer(image, x, y, visibility)
@@ -106,3 +106,13 @@ class MPII(Dataset):
 
         with open(self.annotations_path, 'w') as out_file:
             json.dump(data, out_file)
+
+    @staticmethod
+    def dict_to_numpy(data):
+        n = len(data)
+        x, y, vis = np.zeros(n), np.zeros(n), np.zeros(n)
+        for p in range(n):
+            x[p] = data[str(p)][0]
+            y[p] = data[str(p)][1]
+            vis[p] = data[str(p)][2]
+        return x, y, vis
