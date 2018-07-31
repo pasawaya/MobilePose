@@ -25,7 +25,8 @@ class PennAction(Dataset):
         self.offset = offset
         self.background = include_background
 
-        self.annotations_path = os.path.join(self.root, 'penn.json')
+        annotations_label = 'train_' if train else 'valid_'
+        self.annotations_path = os.path.join(self.root, annotations_label + 'annotations.json')
 
         if not os.path.isfile(self.annotations_path):
             self.generate_annotations()
@@ -84,12 +85,14 @@ class PennAction(Dataset):
                 video_id = filename.split('.')[0]
                 frames_root = os.path.join(self.root, 'frames', video_id, '*')
                 _, _, n = annotations['dimensions'][0]
-                indices = np.arange(0, n, self.T)[:-1]   # Exclude last range, may not be `T` long
-                for start_index in indices:
-                    data[i] = {'annotations_path': annotation_path,
-                               'frames_root': frames_root,
-                               'start_index': str(start_index)}
-                    i += 1
+                train = bool(annotations['train'][0][0] + 1)
+                if train == self.train:
+                    indices = np.arange(0, n, self.T)[:-1]   # Exclude last range, may not be `T` long
+                    for start_index in indices:
+                        data[i] = {'annotations_path': annotation_path,
+                                   'frames_root': frames_root,
+                                   'start_index': str(start_index)}
+                        i += 1
 
         with open(self.annotations_path, 'w') as out_file:
             json.dump(data, out_file)
