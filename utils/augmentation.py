@@ -185,6 +185,12 @@ class VideoTransformer(Transformer):
             frame = frames[t]
             x_t, y_t, vis_t, bbox = x[t, :], y[t, :], visibility[t, :], bboxes[t, :]
 
+            # if bbox is None:
+            if True:
+                x_min, x_max = max(0, np.amin(x_t) - self.pad), min(frame.shape[1] - 1, np.amax(x_t) + self.pad)
+                y_min, y_max = max(0, np.amin(y_t) - self.pad), min(frame.shape[0] - 1, np.amax(y_t) + self.pad)
+                bbox = np.array([x_min, y_min, x_max, y_max]).astype(np.int32)
+
             if scale:
                 frame, bbox, x_t, y_t = self.scale(frame, bbox, x_t, y_t, f_xy)
 
