@@ -9,8 +9,6 @@ from utils.dataset_utils import *
 from skimage.io import imread
 from scipy.io import loadmat
 
-from utils.augmentation import *
-
 
 class PennActionDataset(Dataset):
     def __init__(self, T, root='../data/PennAction', transformer=None, output_size=256, train=True, subset_size=None,
@@ -111,8 +109,3 @@ class PennActionDataset(Dataset):
     def reorder_joints(x, y, vis):
         mpii_order = [12, 10, 8, 7, 9, 11, 3, 5, 13, 0, 6, 4, 2, 1]
         return x[:, mpii_order], y[:, mpii_order], vis[:, mpii_order]
-
-
-transformer = VideoTransformer()
-dataset = PennActionDataset(5, transformer=transformer)
-frames, label_map, center_map, meta = dataset[0]
