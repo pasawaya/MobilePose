@@ -6,6 +6,7 @@ import configargparse
 import torch.nn.utils as utils
 from tqdm import tqdm
 from datasets.MPII import MPII
+from datasets.LSP import LSP
 from datasets.PennAction import PennAction
 
 from torch.utils.data import DataLoader
@@ -99,10 +100,19 @@ def main(args):
     device = torch.device(device_name)
     loader_args = {'num_workers': 1, 'pin_memory': True} if 'cuda' in device_name else {}
 
-    dataset_name = 'PennAction' if args.dataset == 'penn' else 'MPII'
+    if args.dataset == 'penn':
+        dataset_name = 'PennAction'
+        dataset = PennAction
+        transformer = VideoTransformer
+    elif args.dataset == 'MPII':
+        dataset_name = 'MPII'
+        dataset = MPII
+        transformer = ImageTransformer
+    else:
+        dataset_name = 'LSP'
+        dataset = LSP
+        transformer = ImageTransformer
     root = os.path.join(args.data_dir, dataset_name)
-    dataset = PennAction if args.dataset == 'penn' else MPII
-    transformer = VideoTransformer if args.dataset == 'penn' else ImageTransformer
 
     mean_name = 'means.npy'
     mean_path = os.path.join(root, mean_name)
@@ -228,6 +238,6 @@ if __name__ == '__main__':
     parser.add('--data_dir', default='data', type=str, help='directory containing data')
     parser.add('--gpu', default=None, type=int, help='gpu id to perform training on')
     parser.add('--pck_r', default=0.2, type=float, help='r coefficient for pck computation')
-    parser.add('--dataset', default='penn', type=str, choices=['penn', 'mpii'], help='dataset to train on')
+    parser.add('--dataset', default='penn', type=str, choices=['penn', 'mpii', 'lsp'], help='dataset to train on')
 
     main(parser.parse_args())
