@@ -1,5 +1,6 @@
 
 import numpy as np
+from skimage.feature import plot_matches
 from skimage.draw import circle, line
 from skimage.io import imshow
 from matplotlib import pyplot as plt
@@ -43,42 +44,43 @@ def visualize_skeleton(image, x, y, vis):
     plt.show()
 
 
-def visualize_map(video, labels):
+def visualize(video, labels, outputs):
+    if video.shape[1] != outputs.shape[1]:
+        f_0 = torch.unsqueeze(video[:, 0, :, :, :], 1)
+        video = torch.cat([f_0, video], dim=1)
+
+    if labels.shape[1] != outputs.shape[1]:
+        l_0 = torch.unsqueeze(labels[:, 0, :, :, :], 1)
+        labels = torch.cat([l_0, labels], dim=1)
+
     batch_size = labels.shape[0]
     n_stages = labels.shape[1]
     n_joints = labels.shape[2]
 
     video = video.detach().numpy().copy().astype(np.uint8)
     video = np.moveaxis(video, 2, 4)
+
     labels = labels.detach()
+    outputs = outputs.detach()
 
     image_size = video.shape[-2]
     label_size = labels.shape[-2]
     r = image_size / label_size
 
     for i in range(batch_size):
-        batch_coords = get_preds(labels[i, :, :, :, :]).numpy()
+        batch_gt_coords = get_preds(labels[i, :, :, :, :]).numpy()
+        batch_pred_coords = get_preds(outputs[i, :, :, :, :]).numpy()
+
         for t in range(n_stages):
             frame = video[i, t, :, :, :]
-            frame_label = labels[i, t, :, :, :].numpy() * 255.
-            frame_coords = batch_coords[t, :, :] * r
+            frame_gt_coords = batch_gt_coords[t, :, :] * r
+            frame_pred_coords = batch_pred_coords[t, :, :] * r
 
-            for p in range(n_joints):
-                joint_label = frame_label[p, :, :]
-                joint_label = np.expand_dims(joint_label, axis=2)
-                joint_label = np.clip(joint_label, 0, 255).astype(np.uint8)
-                joint_label = cv2.cvtColor(joint_label, cv2.COLOR_GRAY2RGB)
-                joint_label = cv2.resize(joint_label, (image_size, image_size))
-
-                joint_frame = cv2.addWeighted(frame, 0.5, joint_label, 0.5, 0)
-
-                joint_coords = frame_coords[p, :]
-                rr, cc = circle(joint_coords[1], joint_coords[0], 4)
-                rr, cc = np.clip(rr, 0, image_size - 1), np.clip(cc, 0, image_size - 1)
-                joint_frame[rr, cc] = (255, 0, 0)
-
-                imshow(joint_frame)
-                plt.show()
+            fig, ax = plt.subplots(nrows=1, ncols=1)
+            matches = np.array([np.linspace(0, n_joints - 1, n_joints, dtype=np.int),
+                                np.linspace(0, n_joints - 1, n_joints, dtype=np.int)]).T
+            plot_matches(ax, frame, frame, frame_gt_coords, frame_pred_coords, matches, keypoints_color='red')
+            plt.show()
 
 
 def compute_label_map(x, y, size, sigma, stride, offset, background):

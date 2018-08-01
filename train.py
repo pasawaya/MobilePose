@@ -42,8 +42,7 @@ def train(model, loader, criterion, optimizer, device, r, scheduler=None, clip=N
             time_avg.update(time.time() - start)
 
             if debug:
-                visualize_map(frames, labels)
-                visualize_map(frames, outputs)
+                visualize(frames, labels, outputs)
 
             if isinstance(criterion, CoordinateLoss):
                 loss = criterion(*outputs, meta, device)
