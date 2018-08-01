@@ -74,6 +74,7 @@ def visualize_map(video, labels):
 
                 joint_coords = frame_coords[p, :]
                 rr, cc = circle(joint_coords[1], joint_coords[0], 4)
+                rr, cc = np.clip(rr, 0, image_size - 1), np.clip(cc, 0, image_size - 1)
                 joint_frame[rr, cc] = (255, 0, 0)
 
                 imshow(joint_frame)
