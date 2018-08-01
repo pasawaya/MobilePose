@@ -177,10 +177,6 @@ def main(args):
     if args.checkpoint_name is not None:
         checkpoint = load_checkpoint(args.model_dir, args.checkpoint_name, model, optimizer)
         start_epoch = checkpoint['epoch']
-        best_acc = checkpoint['accuracy']
-        if args.host is not None:
-            summary.add_scalar_value('Epoch Valid Accuracy', checkpoint['accuracy'])
-            summary.add_scalar_value('Epoch Valid Loss', checkpoint['loss'])
 
     for epoch in range(start_epoch, args.max_epochs):
         print('\n[epoch ' + str(epoch) + ']')
@@ -199,9 +195,8 @@ def main(args):
         is_best = valid_acc >= best_acc
         save_checkpoint({'epoch': epoch + 1,
                          'state_dict': model.state_dict(),
-                         'optimizer': optimizer.state_dict(),
-                         'accuracy': valid_acc,
-                         'loss': valid_loss}, is_best=is_best, checkpoint=args.model_dir, prefix=start_time_prefix)
+                         'optimizer': optimizer.state_dict()},
+                        is_best=is_best, checkpoint=args.model_dir, prefix=start_time_prefix)
         best_acc = valid_acc if is_best else best_acc
 
 
