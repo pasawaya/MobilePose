@@ -80,7 +80,7 @@ def validate(model, loader, criterion, device, r):
     acc_avg = RunningAverage()
 
     model.eval()
-    for i, (frames, labels, centers, meta) in enumerate(loader):
+    for i, (frames, labels, centers, meta, _) in enumerate(loader):
         frames, labels, centers, meta = frames.to(device), labels.to(device), centers.to(device), meta.to(device)
 
         outputs = model(frames, centers)
