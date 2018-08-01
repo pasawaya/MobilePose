@@ -26,7 +26,7 @@ from models.losses.MSESequenceLoss import MSESequenceLoss
 from models.losses.CoordinateLoss import CoordinateLoss
 
 
-def train(model, loader, criterion, optimizer, device, r, scheduler=None, clip=None, summary=None):
+def train(model, loader, criterion, optimizer, device, r, scheduler=None, clip=None, summary=None, debug=False):
     loss_avg = RunningAverage()
     acc_avg = RunningAverage()
     time_avg = RunningAverage()
@@ -36,9 +36,15 @@ def train(model, loader, criterion, optimizer, device, r, scheduler=None, clip=N
     with tqdm(total=len(loader)) as t:
         for i, (frames, labels, centers, meta) in enumerate(loader):
             frames, labels, centers, meta = frames.to(device), labels.to(device), centers.to(device), meta.to(device)
+
             start = time.time()
             outputs = model(frames, centers)
             time_avg.update(time.time() - start)
+
+            if debug:
+                visualize_map(frames, labels)
+                visualize_map(frames, outputs)
+
             if isinstance(criterion, CoordinateLoss):
                 loss = criterion(*outputs, meta, device)
                 acc = coord_accuracy(outputs[1], meta, r=r)
@@ -181,7 +187,7 @@ def main(args):
     for epoch in range(start_epoch, args.max_epochs):
         print('\n[epoch ' + str(epoch) + ']')
         train_loss, train_acc = train(model, train_loader, criterion, optimizer, device, args.pck_r, scheduler,
-                                      args.clip, summary)
+                                      args.clip, summary, args.debug)
         valid_loss, valid_acc = validate(model, valid_loader, criterion, device, args.pck_r)
 
         if args.host is not None:
@@ -234,5 +240,6 @@ if __name__ == '__main__':
     parser.add('--gpu', default=None, type=int, help='gpu id to perform training on')
     parser.add('--pck_r', default=0.2, type=float, help='r coefficient for pck computation')
     parser.add('--dataset', default='penn', type=str, choices=['penn', 'mpii', 'lsp'], help='dataset to train on')
+    parser.add('--debug', action='store_true', help='visualize model inputs and outputs')
 
     main(parser.parse_args())

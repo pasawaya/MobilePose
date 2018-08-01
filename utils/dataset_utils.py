@@ -23,7 +23,7 @@ def compute_mean(dataset):
     return mean, std
 
 
-def visualize_input(image, x, y, vis):
+def visualize_skeleton(image, x, y, vis):
     limbs = [(0, 1), (1, 2), (2, 3), (2, 8), (3, 8), (3, 4), (4, 5), (8, 9), (8, 12),
              (8, 13), (10, 11), (11, 12), (12, 13), (6, 7), (6, 13)]
 
@@ -43,49 +43,41 @@ def visualize_input(image, x, y, vis):
     plt.show()
 
 
-def visualize_label_map(image, label_map):
-    label_map = label_map.numpy() * 255
-    label_map = np.sum(label_map, axis=1, dtype=np.uint8, keepdims=True)
-    label_map = np.repeat(np.moveaxis(label_map, 1, 3), 3, axis=3)
-    label_map = np.squeeze(label_map, 0)
-    label_map = cv2.resize(label_map, (image.shape[0], image.shape[1]))
+def visualize_map(video, labels):
+    batch_size = labels.shape[0]
+    n_stages = labels.shape[1]
+    n_joints = labels.shape[2]
 
-    image = cv2.addWeighted(image, 0.5, label_map, 0.5, 0)
-    imshow(image)
-    plt.show()
-
-
-def visualize_center_map(image, center_map):
-    center_map = center_map.numpy() * 255.
-    center_map = np.moveaxis(center_map, 0, 2).astype(np.uint8).copy()
-    center_map = np.repeat(center_map, 3, axis=2)
-    image = cv2.addWeighted(image, 0.5, center_map, 0.5, 0)
-    imshow(image)
-    plt.show()
-
-
-def visualize_truth(video, labels):
     video = video.detach().numpy().copy().astype(np.uint8)
-    video = np.moveaxis(video, 1, 3)
-
+    video = np.moveaxis(video, 2, 4)
     labels = labels.detach()
-    labels = torch.squeeze(labels, 1)
-    coords = get_preds(labels) * (256. / 64.)
 
-    size = video.shape[-2]
-    for t in range(video.shape[0]):
-        frame = video[t].copy()
+    image_size = video.shape[-2]
+    label_size = labels.shape[-2]
+    r = image_size / label_size
 
-        heatmap = torch.squeeze(labels[t], 0).numpy() * 255.
-        heatmap = np.sum(heatmap, axis=0)
-        heatmap = np.clip(heatmap, 0, 255).astype(np.uint8)
-        heatmap = cv2.cvtColor(heatmap, cv2.COLOR_GRAY2RGB)
-        heatmap = cv2.resize(heatmap, (size, size))
-        frame = cv2.addWeighted(frame, 0.5, heatmap, 0.5, 0)
-        for (x, y) in coords[t]:
-            cv2.circle(frame, (x, y), 2, (0, 255, 0))
-        imshow(frame)
-        plt.show()
+    for i in range(batch_size):
+        batch_coords = get_preds(labels[i, :, :, :, :]).numpy()
+        for t in range(n_stages):
+            frame = video[i, t, :, :, :]
+            frame_label = labels[i, t, :, :, :].numpy() * 255.
+            frame_coords = batch_coords[t, :, :] * r
+
+            for p in range(n_joints):
+                joint_label = frame_label[p, :, :]
+                joint_label = np.expand_dims(joint_label, axis=2)
+                joint_label = np.clip(joint_label, 0, 255).astype(np.uint8)
+                joint_label = cv2.cvtColor(joint_label, cv2.COLOR_GRAY2RGB)
+                joint_label = cv2.resize(joint_label, (image_size, image_size))
+
+                joint_frame = cv2.addWeighted(frame, 0.5, joint_label, 0.5, 0)
+
+                joint_coords = frame_coords[p, :]
+                rr, cc = circle(joint_coords[1], joint_coords[0], 4)
+                joint_frame[rr, cc] = (255, 0, 0)
+
+                imshow(joint_frame)
+                plt.show()
 
 
 def compute_label_map(x, y, size, sigma, stride, offset, background):
