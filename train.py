@@ -34,7 +34,7 @@ def train(model, loader, criterion, optimizer, device, r, scheduler=None, clip=N
     model.train()
 
     with tqdm(total=len(loader)) as t:
-        for i, (frames, labels, centers, meta) in enumerate(loader):
+        for i, (frames, labels, centers, meta, unnormalized) in enumerate(loader):
             frames, labels, centers, meta = frames.to(device), labels.to(device), centers.to(device), meta.to(device)
 
             start = time.time()
@@ -42,7 +42,7 @@ def train(model, loader, criterion, optimizer, device, r, scheduler=None, clip=N
             time_avg.update(time.time() - start)
 
             if debug:
-                visualize(frames, labels, outputs)
+                visualize(unnormalized, labels, outputs)
 
             if isinstance(criterion, CoordinateLoss):
                 loss = criterion(*outputs, meta, device)

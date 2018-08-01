@@ -42,12 +42,12 @@ class PennAction(Dataset):
         x, y, visibility, bbox = self.load_annotation(idx)
 
         if self.transformer is not None:
-            frames, x, y, visibility, bbox = self.transformer(frames, x, y, visibility, bbox)
+            frames, x, y, visibility, bbox, unnormalized = self.transformer(frames, x, y, visibility, bbox)
 
         label_map = compute_label_map(x, y, self.output_size, self.sigma, self.stride, self.offset, self.background)
         center_map = compute_center_map(self.output_size)
         meta = torch.from_numpy(np.squeeze(np.hstack([x, y]))).float()
-        return frames, label_map, center_map, meta
+        return frames, label_map, center_map, meta, unnormalized
 
     def load_annotation(self, idx):
         annotations_path = self.annotations[str(idx)]['annotations_path']

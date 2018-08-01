@@ -123,10 +123,10 @@ class Transformer(object):
         return x, y
 
     @staticmethod
-    def color_jitter(image, min_jitter, max_jitter):
-        image[:, :, 0] = np.clip(image[:, :, 0] * uniform(min_jitter, max_jitter), 0., 255.)
-        image[:, :, 1] = np.clip(image[:, :, 1] * uniform(min_jitter, max_jitter), 0., 255.)
-        image[:, :, 2] = np.clip(image[:, :, 2] * uniform(min_jitter, max_jitter), 0., 255.)
+    def color_jitter(image, jitter):
+        image[:, :, 0] = np.clip(image[:, :, 0] * jitter[0], 0., 255.)
+        image[:, :, 1] = np.clip(image[:, :, 1] * jitter[1], 0., 255.)
+        image[:, :, 2] = np.clip(image[:, :, 2] * jitter[2], 0., 255.)
         return image
 
     @staticmethod
@@ -163,9 +163,13 @@ class ImageTransformer(Transformer):
             angle = -self.max_degree + 2 * self.max_degree * random()
             image, bbox, x, y = self.rotate(image, bbox, x, y, angle)
 
-        image = self.color_jitter(image, self.min_jitter, self.max_jitter)
+        jitter = np.array([uniform(self.min_jitter, self.max_jitter),
+                           uniform(self.min_jitter, self.max_jitter),
+                           uniform(self.min_jitter, self.max_jitter)])
+        image = self.color_jitter(image, jitter)
+        unnormalized = image.copy()
         image = self.normalize(image, self.mean, self.std)
-        return self.to_torch(image), x, y, visibility
+        return self.to_torch(image), x, y, visibility, self.to_torch(unnormalized)
 
 
 class VideoTransformer(Transformer):
@@ -176,8 +180,11 @@ class VideoTransformer(Transformer):
 
         f_xy = self.min_scale + (self.max_scale - self.min_scale) * random()
         angle = -self.max_degree + 2 * self.max_degree * random()
+        jitter = np.array([uniform(self.min_jitter, self.max_jitter),
+                           uniform(self.min_jitter, self.max_jitter),
+                           uniform(self.min_jitter, self.max_jitter)])
 
-        transformed = []
+        transformed, unnormalized = [], []
         x_trans, y_trans, vis_trans = np.zeros_like(x), np.zeros_like(y), np.zeros_like(visibility)
         bboxes_trans = np.zeros_like(bboxes)
 
@@ -202,10 +209,10 @@ class VideoTransformer(Transformer):
             if rotate:
                 frame, bbox, x_t, y_t = self.rotate(frame, bbox, x_t, y_t, angle)
 
-            frame = self.color_jitter(frame, self.min_jitter, self.max_jitter)
+            frame = self.color_jitter(frame, jitter)
+            unnormalized.append(self.to_torch(frame))
             frame = self.normalize(frame, self.mean, self.std)
-            frame = self.to_torch(frame)
-            transformed.append(frame)
+            transformed.append(self.to_torch(frame))
 
             x_trans[t, :] = x_t
             y_trans[t, :] = y_t
@@ -213,4 +220,5 @@ class VideoTransformer(Transformer):
             bboxes_trans[t, :] = bbox
 
         frames = torch.stack(transformed, dim=0)
-        return frames, x_trans, y_trans, vis_trans, bboxes_trans
+        unnormalized = torch.stack(unnormalized, dim=0)
+        return frames, x_trans, y_trans, vis_trans, bboxes_trans, unnormalized

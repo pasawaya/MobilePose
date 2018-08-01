@@ -45,7 +45,7 @@ class LSP(Dataset):
         x, y, visibility = self.load_annotation(idx)
 
         if self.transformer is not None:
-            image, x, y, visibility = self.transformer(image, x, y, visibility)
+            image, x, y, visibility, unnormalized = self.transformer(image, x, y, visibility)
 
         label_map = compute_label_map(x, y, self.output_size, self.sigma, self.stride, self.offset, self.background)
         center_map = compute_center_map(self.output_size)
@@ -53,8 +53,9 @@ class LSP(Dataset):
         meta = torch.from_numpy(np.squeeze(np.hstack([x, y]))).float()
 
         image = torch.unsqueeze(image, 0).repeat(self.T, 1, 1, 1)
+        unnormalized = torch.unsqueeze(unnormalized, 0).repeat(self.T, 1, 1, 1)
         label_map = label_map.repeat(self.T, 1, 1, 1)
-        return image, label_map, center_map, meta
+        return image, label_map, center_map, meta, unnormalized
 
     def load_annotation(self, idx):
         labels = self.annotations[str(idx)]['joints']
