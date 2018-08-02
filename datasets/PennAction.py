@@ -24,7 +24,6 @@ class PennAction(Dataset):
         self.root = root
         self.train = train
         self.output_size = output_size
-        self.flag = int(train)
         self.transformer = transformer
         self.n_joints = 14
         self.sigma_center = sigma_center
