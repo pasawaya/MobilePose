@@ -45,9 +45,6 @@ class MPII(Dataset):
         self.start_idx = 0 if train else int(np.floor(train_ratio * n))
         self.size = int(np.floor(train_ratio * n)) if train else n - self.start_idx
 
-        if subset_size is not None:
-            self.size = subset_size
-
     def __len__(self):
         return self.size
 
