@@ -102,6 +102,7 @@ def validate(model, loader, criterion, device, r):
 
 
 def main(args):
+    n_joints = 14
     start_time_prefix = str(int(time.time()))[-4:] + "_"
     print('Checkpoint prefix will be ' + start_time_prefix)
 
@@ -147,11 +148,11 @@ def main(args):
 
     criterion = MSESequenceLoss()
     if args.model == 'hourglass':
-        model = PretrainRecurrentStackedHourglass(3, 64, train_dataset.n_joints + 1, device, block, T=args.t, depth=args.depth)
+        model = PretrainRecurrentStackedHourglass(3, 64, n_joints + 1, device, block, T=args.t, depth=args.depth)
     elif args.model == 'lpm':
-        model = LPM(3, 32, train_dataset.n_joints + 1, device, T=args.t)
+        model = LPM(3, 32, n_joints + 1, device, T=args.t)
     else:
-        model = CoordinateLPM(3, 32, train_dataset.n_joints, device, T=args.t)
+        model = CoordinateLPM(3, 32, n_joints, device, T=args.t)
         criterion = CoordinateLoss()
     model = model.to(device)
     criterion = criterion.to(device)
