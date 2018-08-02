@@ -1,4 +1,5 @@
 
+import sys
 import time
 import argparse
 import pycrayon
@@ -183,26 +184,34 @@ def main(args):
         checkpoint = load_checkpoint(args.model_dir, args.checkpoint_name, model, optimizer)
         start_epoch = checkpoint['epoch']
 
-    for epoch in range(start_epoch, args.max_epochs):
-        print('\n[epoch ' + str(epoch) + ']')
-        train_loss, train_acc = train(model, train_loader, criterion, optimizer, device, args.pck_r, scheduler,
-                                      args.clip, summary, args.debug)
-        valid_loss, valid_acc = validate(model, valid_loader, criterion, device, args.pck_r)
+    try:
+        for epoch in range(start_epoch, args.max_epochs):
+            print('\n[epoch ' + str(epoch) + ']')
+            train_loss, train_acc = train(model, train_loader, criterion, optimizer, device, args.pck_r, scheduler,
+                                          args.clip, summary, args.debug)
+            valid_loss, valid_acc = validate(model, valid_loader, criterion, device, args.pck_r)
 
+            if args.host is not None:
+                summary.add_scalar_value('Epoch Train Loss', train_loss)
+                summary.add_scalar_value('Epoch Valid Loss', valid_loss)
+                summary.add_scalar_value('Epoch Train Accuracy', train_acc)
+                summary.add_scalar_value('Epoch Valid Accuracy', valid_acc)
+                if scheduler is not None:
+                    summary.add_scalar_value('Learning Rate', scheduler.get_lr()[0])
+
+            is_best = valid_acc >= best_acc
+            save_checkpoint({'epoch': epoch + 1,
+                             'state_dict': model.state_dict(),
+                             'optimizer': optimizer.state_dict()},
+                            is_best=is_best, checkpoint=args.model_dir, prefix=start_time_prefix)
+            best_acc = valid_acc if is_best else best_acc
+    except KeyboardInterrupt:
         if args.host is not None:
-            summary.add_scalar_value('Epoch Train Loss', train_loss)
-            summary.add_scalar_value('Epoch Valid Loss', valid_loss)
-            summary.add_scalar_value('Epoch Train Accuracy', train_acc)
-            summary.add_scalar_value('Epoch Valid Accuracy', valid_acc)
-            if scheduler is not None:
-                summary.add_scalar_value('Learning Rate', scheduler.get_lr()[0])
-
-        is_best = valid_acc >= best_acc
-        save_checkpoint({'epoch': epoch + 1,
-                         'state_dict': model.state_dict(),
-                         'optimizer': optimizer.state_dict()},
-                        is_best=is_best, checkpoint=args.model_dir, prefix=start_time_prefix)
-        best_acc = valid_acc if is_best else best_acc
+            print('Saving Tensorboard data...')
+            zip_path = os.path.join(args.model_dir, start_time_prefix + args.model)
+            summary.to_zip(zip_path)
+            cc.remove_experiment(args.experiment)
+        sys.exit(0)
 
 
 if __name__ == '__main__':
