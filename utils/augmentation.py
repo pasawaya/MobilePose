@@ -31,6 +31,7 @@ class Transformer(object):
 
     @staticmethod
     def rotate(image, bbox, x, y, angle):
+        # Maybe switch o_x, o_y order
         o_x, o_y = (np.array(image.shape[:2][::-1]) - 1) / 2.
         image = rotate(image, angle, preserve_range=True).astype(np.uint8)
         r_x, r_y = (np.array(image.shape[:2][::-1]) - 1) / 2.
@@ -88,9 +89,7 @@ class Transformer(object):
     @staticmethod
     def scale(image, bbox, x, y, f_xy):
         (h, w, _) = image.shape
-
-        w = int(w * f_xy)
-        h = int(h * f_xy)
+        h, w = int(h * f_xy), int(w * f_xy)
         image = resize(image, (h, w), preserve_range=True, anti_aliasing=True, mode='constant').astype(np.uint8)
 
         x = x * f_xy

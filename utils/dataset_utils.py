@@ -10,17 +10,16 @@ import cv2
 
 
 def compute_mean(dataset):
-    mean, std = np.zeros(3, dtype=np.float), np.zeros(3, dtype=np.float)
+    mean, std = torch.zeros(3), torch.zeros(3)
     for i in range(len(dataset)):
-        video, _, _, _ = dataset[i]
+        print(str(i) + ' / ' + str(len(dataset)))
+        video, _, _, _, _ = dataset[i]
         for t in range(len(video)):
             im = video[t]
-            im = np.moveaxis(im, 2, 0)
-            im = im.reshape(im.shape[0], -1)
-            mean += np.mean(im, axis=1)
-            std += np.std(im, axis=1)
-    mean = (mean / 255.) / float(len(dataset))
-    std = (std / 255.) / float(len(dataset))
+            mean += im.view(im.size(0), -1).mean(1)
+            std += im.view(im.size(0), -1).std(1)
+    mean /= 5 * len(dataset)
+    std /= 5 * len(dataset)
     return mean, std
 
 
