@@ -6,7 +6,6 @@ from skimage.io import imshow
 from matplotlib import pyplot as plt
 from .evaluation import *
 import torch
-import cv2
 
 
 def compute_mean(dataset):
@@ -24,24 +23,16 @@ def compute_mean(dataset):
     return mean, std
 
 
-def visualize_skeleton(image, x, y, vis):
+def draw_skeleton(image, coordinates):
     limbs = [(0, 1), (1, 2), (2, 3), (2, 8), (3, 8), (3, 4), (4, 5), (8, 9), (8, 12),
              (8, 13), (10, 11), (11, 12), (12, 13), (6, 7), (6, 13)]
 
-    image = image.astype(np.uint8)
-
-    for p_x, p_y, p_vis in zip(x, y, vis):
-        if p_vis:
-            rr, cc = circle(p_y, p_x, 4)
-            image[rr, cc] = (255, 255, 255)
-
+    coordinates = coordinates.astype(np.int)
     for i, j in limbs:
-        if vis[i] and vis[j]:
-            rr, cc = line(y[i], x[i], y[j], x[j])
-            image[rr, cc] = (0, 255, 0)
-
-    imshow(image)
-    plt.show()
+        rr, cc = line(coordinates[i, 0], coordinates[i, 1], coordinates[j, 0], coordinates[j, 1])
+        rr, cc = np.clip(rr, 0, image.shape[1] - 1), np.clip(cc, 0, image.shape[0] - 1)
+        image[rr, cc] = (0, 255, 0)
+    return image
 
 
 def visualize(video, labels, outputs):
@@ -53,9 +44,7 @@ def visualize(video, labels, outputs):
         l_0 = torch.unsqueeze(labels[:, 0, :, :, :], 1)
         labels = torch.cat([l_0, labels], dim=1)
 
-    batch_size = labels.shape[0]
-    n_stages = labels.shape[1]
-    n_joints = labels.shape[2]
+    batch_size, n_stages, n_joints = labels.shape[0], labels.shape[1], labels.shape[2]
 
     video = video.detach().numpy().copy().astype(np.uint8)
     video = np.moveaxis(video, 2, 4)
@@ -73,13 +62,17 @@ def visualize(video, labels, outputs):
 
         for t in range(n_stages):
             frame = video[i, t, :, :, :]
-            frame_gt_coords = batch_gt_coords[t, :, :] * r
-            frame_pred_coords = batch_pred_coords[t, :, :] * r
+            frame_gt_coords = np.flip(batch_gt_coords[t, :, :] * r, axis=1)
+            frame_pred_coords = np.flip(batch_pred_coords[t, :, :] * r, axis=1)
+
+            gt_frame = draw_skeleton(frame.copy(), frame_gt_coords)
+            pred_frame = draw_skeleton(frame.copy(), frame_pred_coords)
 
             fig, ax = plt.subplots(nrows=1, ncols=1)
             matches = np.array([np.linspace(0, n_joints - 1, n_joints, dtype=np.int),
                                 np.linspace(0, n_joints - 1, n_joints, dtype=np.int)]).T
-            plot_matches(ax, frame, frame, frame_gt_coords, frame_pred_coords, matches, keypoints_color='red')
+            plot_matches(ax, gt_frame, pred_frame, frame_gt_coords, frame_pred_coords, np.array([]),
+                         keypoints_color='red')
             plt.show()
 
 
