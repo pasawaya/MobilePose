@@ -13,8 +13,15 @@ train_ratio = 0.95
 
 
 class MPII(Dataset):
-    def __init__(self, T, root='data/MPII', transformer=None, output_size=256, train=True, subset_size=None,
-                 sigma_center=21, sigma_label=2, label_size=31):
+    def __init__(self, T,
+                 root='data/MPII',
+                 transformer=None,
+                 train=True,
+                 output_size=256,
+                 sigma_center=21,
+                 sigma_label=2,
+                 label_size=31):
+
         self.T = T
         self.root = root
         self.train = train

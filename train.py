@@ -136,11 +136,10 @@ def main(args):
                                     p_scale=0.0, p_flip=0.0, p_rotate=0.0,
                                     mean=mean, std=std)
 
-    debug_transformer = transformer(output_size=args.resolution, p_scale=0.0, p_flip=0.0, p_rotate=0.0)
     train_dataset = dataset(args.t, root=root, transformer=train_transformer, output_size=args.resolution,
-                            train=True, subset_size=args.subset_size, sigma_center=21, sigma_label=2)
+                            train=True, sigma_center=21, sigma_label=2)
     valid_dataset = dataset(args.t, root=root, transformer=valid_transformer, output_size=args.resolution,
-                            train=False, subset_size=args.subset_size, sigma_center=21, sigma_label=2)
+                            train=False, sigma_center=21, sigma_label=2)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, **loader_args)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=args.batch_size, shuffle=False, **loader_args)
