@@ -109,22 +109,19 @@ def main(args):
     device = torch.device(device_name)
     loader_args = {'num_workers': 1, 'pin_memory': True} if 'cuda' in device_name else {}
 
-    if args.dataset == 'penn':
-        dataset_name = 'PennAction'
+    if args.dataset == 'PennAction':
         dataset = PennAction
         transformer = VideoTransformer
-    elif args.dataset == 'mpii':
-        dataset_name = 'MPII'
+    elif args.dataset == 'MPII':
         dataset = MPII
         transformer = ImageTransformer
     elif args.dataset == 'lsp':
-        dataset_name = 'LSP'
         dataset = LSP
         transformer = ImageTransformer
     else:
         print('Invalid dataset chosen.')
         sys.exit(0)
-    root = os.path.join(args.data_dir, dataset_name)
+    root = os.path.join(args.data_dir, args.dataset)
 
     mean_name = 'means.npy'
     mean_path = os.path.join(root, mean_name)
@@ -139,10 +136,10 @@ def main(args):
                                     p_scale=0.0, p_flip=0.0, p_rotate=0.0,
                                     mean=mean, std=std)
 
-    train_dataset = dataset(args.t, root=root, transformer=train_transformer, output_size=args.resolution,
-                            train=True, sigma_center=21, sigma_label=2)
-    valid_dataset = dataset(args.t, root=root, transformer=valid_transformer, output_size=args.resolution,
-                            train=False, sigma_center=21, sigma_label=2)
+    train_dataset = dataset(train=True, T=args.t, root=root, transformer=train_transformer,
+                            output_size=args.resolution, sigma_center=21, sigma_label=2)
+    valid_dataset = dataset(train=False, T=args.t, root=root, transformer=valid_transformer,
+                            output_size=args.resolution, sigma_center=21, sigma_label=2)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, **loader_args)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=args.batch_size, shuffle=False, **loader_args)
@@ -248,7 +245,7 @@ if __name__ == '__main__':
     parser.add('--data_dir', default='data', type=str, help='directory containing data')
     parser.add('--gpu', default=None, type=int, help='gpu id to perform training on')
     parser.add('--pck_r', default=0.2, type=float, help='r coefficient for pck computation')
-    parser.add('--dataset', default='penn', type=str, choices=['penn', 'mpii', 'lsp'], help='dataset to train on')
+    parser.add('--dataset', default='penn', type=str, choices=['PennAction', 'MPII', 'LSP'], help='dataset to train on')
     parser.add('--debug', action='store_true', help='visualize model inputs and outputs')
 
     main(parser.parse_args())

@@ -11,20 +11,20 @@ from scipy.io import loadmat
 
 
 class MPII(Dataset):
-    def __init__(self, T,
+    def __init__(self,
+                 T=5,
                  root='data/MPII',
                  transformer=None,
                  train=True,
                  output_size=256,
+                 label_size=31,
                  sigma_center=21,
-                 sigma_label=2,
-                 label_size=31):
+                 sigma_label=2):
 
         self.T = T
         self.root = root
         self.train = train
         self.output_size = output_size
-        self.n_joints = 14
         self.sigma_center = sigma_center
         self.sigma_label = sigma_label
         self.label_size = label_size
