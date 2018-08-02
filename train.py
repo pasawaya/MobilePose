@@ -113,14 +113,17 @@ def main(args):
         dataset_name = 'PennAction'
         dataset = PennAction
         transformer = VideoTransformer
-    elif args.dataset == 'MPII':
+    elif args.dataset == 'mpii':
         dataset_name = 'MPII'
         dataset = MPII
         transformer = ImageTransformer
-    else:
+    elif args.dataset == 'lsp':
         dataset_name = 'LSP'
         dataset = LSP
         transformer = ImageTransformer
+    else:
+        print('Invalid dataset chosen.')
+        sys.exit(0)
     root = os.path.join(args.data_dir, dataset_name)
 
     mean_name = 'means.npy'
