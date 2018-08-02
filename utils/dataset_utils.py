@@ -19,9 +19,7 @@ def save_mean(dataset, device, path):
         std += video.std(2).sum(0)
     mean /= dataset.T * len(dataset)
     std /= dataset.T * len(dataset)
-    print(mean)
-    print(std)
-    # np.save(path, np.array([mean.numpy(), std.numpy()]))
+    np.save(path, np.array([mean.numpy(), std.numpy()]))
 
 
 def draw_skeleton(image, coordinates):
