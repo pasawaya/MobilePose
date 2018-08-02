@@ -9,19 +9,19 @@ import torch
 import cv2
 
 
-def compute_mean(dataset, device):
+def save_mean(dataset, device, path):
     mean, std = torch.zeros(3).to(device), torch.zeros(3).to(device)
-    for i in range(len(dataset)):
+    for i in range(1):
         print(str(i) + ' / ' + str(len(dataset)))
         video, _, _, _, _ = dataset[i]
-        video = video.to(device)
-        for t in range(len(video)):
-            im = video[t]
-            mean += im.view(im.size(0), -1).mean(1)
-            std += im.view(im.size(0), -1).std(1)
-    mean /= 5 * len(dataset)
-    std /= 5 * len(dataset)
-    return mean, std
+        video = video.to(device).view(video.shape[0], video.shape[1], -1)
+        mean += video.mean(2).sum(0)
+        std += video.std(2).sum(0)
+    mean /= dataset.T * len(dataset)
+    std /= dataset.T * len(dataset)
+    print(mean)
+    print(std)
+    # np.save(path, np.array([mean.numpy(), std.numpy()]))
 
 
 def draw_skeleton(image, coordinates):

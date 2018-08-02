@@ -115,22 +115,18 @@ def main(args):
     elif args.dataset == 'MPII':
         dataset = MPII
         transformer = ImageTransformer
-    elif args.dataset == 'lsp':
+    else:
         dataset = LSP
         transformer = ImageTransformer
-    else:
-        print('Invalid dataset chosen.')
-        sys.exit(0)
+
     root = os.path.join(args.data_dir, args.dataset)
-
-    mean_name = 'means.npy'
-    mean_path = os.path.join(root, mean_name)
+    mean_path = os.path.join(root, 'means.npy')
     if not os.path.isfile(mean_path):
-        mean, std = compute_mean(dataset(args.t, root=root, output_size=args.resolution, train=True),
-                                 device)
-        np.save(mean_path, np.array([mean, std]))
+        save_mean(dataset(args.t, root=root, output_size=args.resolution, train=True), device, mean_path)
 
-    mean, std = np.load(os.path.join(root, 'means.npy'))
+    mean, std = np.load(mean_path)
+    print(mean)
+    print(std)
     train_transformer = transformer(output_size=args.resolution, mean=mean, std=std)
     valid_transformer = transformer(output_size=args.resolution,
                                     p_scale=0.0, p_flip=0.0, p_rotate=0.0,
