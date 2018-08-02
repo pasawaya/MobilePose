@@ -38,12 +38,16 @@ def train(model, loader, criterion, optimizer, device, r, scheduler=None, clip=N
         for i, (frames, labels, centers, meta, unnormalized) in enumerate(loader):
             frames, labels, centers, meta = frames.to(device), labels.to(device), centers.to(device), meta.to(device)
 
+            if debug:
+                debug_inputs(unnormalized, labels, centers)
+
             start = time.time()
             outputs = model(frames, centers)
             time_avg.update(time.time() - start)
 
             if debug:
-                visualize(unnormalized, labels, outputs)
+                debug_inputs(unnormalized, labels, centers)
+                # visualize(unnormalized, labels, outputs)
 
             if isinstance(criterion, CoordinateLoss):
                 loss = criterion(*outputs, meta, device)
@@ -133,15 +137,11 @@ def main(args):
                                     p_scale=0.0, p_flip=0.0, p_rotate=0.0,
                                     mean=mean, std=std)
 
-    stride = 4 if args.model == 'hourglass' else 8
-    offset = 0 if args.model == 'hourglass' else -1
-    include_background = args.model != 'coord_lpm'
-    train_dataset = dataset(args.t, root=root, transformer=train_transformer, output_size=args.resolution,
-                            train=True, subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
-                            include_background=include_background)
+    debug_transformer = transformer(output_size=args.resolution, p_scale=0.0, p_flip=0.0, p_rotate=0.0)
+    train_dataset = dataset(args.t, root=root, transformer=debug_transformer, output_size=args.resolution,
+                            train=True, subset_size=args.subset_size, sigma=7)
     valid_dataset = dataset(args.t, root=root, transformer=valid_transformer, output_size=args.resolution,
-                            train=False, subset_size=args.subset_size, sigma=7, stride=stride, offset=offset,
-                            include_background=include_background)
+                            train=False, subset_size=args.subset_size, sigma=7)
 
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True, **loader_args)
     valid_loader = DataLoader(dataset=valid_dataset, batch_size=args.batch_size, shuffle=False, **loader_args)

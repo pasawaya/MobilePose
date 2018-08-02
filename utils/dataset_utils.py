@@ -6,6 +6,7 @@ from skimage.io import imshow
 from matplotlib import pyplot as plt
 from .evaluation import *
 import torch
+import cv2
 
 
 def compute_mean(dataset):
@@ -35,7 +36,37 @@ def draw_skeleton(image, coordinates):
     return image
 
 
-def visualize(video, labels, outputs):
+def to_numpy(tensor, scale=1.0, dtype=np.uint8):
+    tensor = tensor.detach().mul(scale).numpy().astype(dtype)
+    return np.moveaxis(tensor, 0, 2)
+
+
+def debug_inputs(video, labels, center_map):
+    batch_size, n_stages, n_joints = labels.shape[0], labels.shape[1], labels.shape[2]
+
+    center_map = to_numpy(center_map[0, :, :, :], scale=255)
+    center_map = cv2.cvtColor(center_map, cv2.COLOR_GRAY2RGB)
+
+    image_size = video.shape[-2]
+
+    for i in range(batch_size):
+        for t in range(n_stages):
+            current_frame = to_numpy(video[i, t, :, :, :])
+
+            current_label = to_numpy(labels[i, t, :, :, :], scale=255)
+            current_label = np.maximum.reduce(current_label, axis=2)
+            current_label = np.expand_dims(current_label, 2)
+            current_label = cv2.cvtColor(current_label, cv2.COLOR_GRAY2RGB)
+            current_label = cv2.resize(current_label, (image_size, image_size))
+
+            inputs = cv2.addWeighted(current_frame, 0.3, current_label, 0.7, 0)
+            inputs = cv2.addWeighted(inputs, 0.6, center_map, 0.4, 0)
+
+            imshow(inputs)
+            plt.show()
+
+
+def debug_predictions(video, labels, outputs):
     if video.shape[1] != outputs.shape[1]:
         f_0 = torch.unsqueeze(video[:, 0, :, :, :], 1)
         video = torch.cat([f_0, video], dim=1)
@@ -69,49 +100,42 @@ def visualize(video, labels, outputs):
             pred_frame = draw_skeleton(frame.copy(), frame_pred_coords)
 
             fig, ax = plt.subplots(nrows=1, ncols=1)
-            matches = np.array([np.linspace(0, n_joints - 1, n_joints, dtype=np.int),
-                                np.linspace(0, n_joints - 1, n_joints, dtype=np.int)]).T
             plot_matches(ax, gt_frame, pred_frame, frame_gt_coords, frame_pred_coords, np.array([]),
                          keypoints_color='red')
             plt.show()
 
 
-def compute_label_map(x, y, size, sigma, stride, offset, background):
-    if len(x.shape) < 2:
-        x = np.expand_dims(x, 0)
-        y = np.expand_dims(y, 0)
+def gaussian(size, x, y, sigma):
+    X, Y = np.mgrid[0:size, 0:size]
+    d2 = (X - x) ** 2 + (Y - y) ** 2
+    exp = np.exp(-d2 / 2.0 / sigma / sigma)
+    exp[exp < 0.01] = 0
+    exp[exp > 1] = 1
+    return exp
 
-    t = x.shape[0]
-    n_joints = x.shape[1]
-    label_size = np.floor(size / stride).astype(int) + offset
-    label_map_joints = n_joints + 1 if background else n_joints
-    label_map = np.zeros((t, label_map_joints, label_size, label_size))
-    start = (stride / 2.) - 0.5
-    for t in range(t):
+
+def center_from_joints(size, x, y):
+    x_min, x_max = max(0, np.amin(x)), min(size - 1, np.amax(x))
+    y_min, y_max = max(0, np.amin(y)), min(size - 1, np.amax(y))
+    return x_min + (x_max - x_min) / 2, y_min + (y_max - y_min) / 2
+
+
+def compute_label_map(x, y, image_size, label_size, sigma):
+    r = label_size / image_size
+    T, n_joints = x.shape[0], x.shape[1]
+    label_map = np.zeros((T, n_joints, label_size, label_size))
+    for t in range(T):
         for p in range(n_joints):
-            center_x, center_y = x[t, p], y[t, p]
-            X, Y = np.meshgrid(np.linspace(0, label_size, label_size), np.linspace(0, label_size, label_size))
-            X = (X - 1) * stride + start - center_x
-            Y = (Y - 1) * stride + start - center_y
-            d2 = X * X + Y * Y
-            exp = d2 * 0.5 / sigma / sigma
-            label = np.exp(-exp)
-            label[label < 0.01] = 0
-            label[label > 1] = 1
-            label_map[t, p, :, :] = label
+            x_center, y_center = x[t, p] * r, y[t, p] * r
+            if x_center > 0 and y_center > 0:
+                label_map[t, p, :, :] = gaussian(label_size, y_center, x_center, sigma)
+            else:
+                label_map[t, p, :, :] = np.zeros((label_size, label_size))
     return torch.from_numpy(label_map).float()
 
 
-def compute_center_map(size, sigma=21):
-    shape = (size, size)
-    x, y = size / 2, size / 2
-    X, Y = np.meshgrid(np.linspace(0, shape[0], shape[0]), np.linspace(0, shape[1], shape[1]))
-    X = X - x
-    Y = Y - y
-    d2 = X * X + Y * Y
-    exp = d2 * 0.5 / sigma / sigma
-    center_map = np.exp(-exp)
-    center_map[center_map < 0.01] = 0
-    center_map[center_map > 1] = 1
+def compute_center_map(x, y, image_size, sigma):
+    x, y = center_from_joints(image_size, x, y)
+    center_map = gaussian(image_size, x, y, sigma)
     center_map = np.expand_dims(center_map, axis=0)
     return torch.from_numpy(center_map).float()
