@@ -9,11 +9,12 @@ import torch
 import cv2
 
 
-def compute_mean(dataset):
-    mean, std = torch.zeros(3), torch.zeros(3)
+def compute_mean(dataset, device):
+    mean, std = torch.zeros(3).to(device), torch.zeros(3).to(device)
     for i in range(len(dataset)):
         print(str(i) + ' / ' + str(len(dataset)))
         video, _, _, _, _ = dataset[i]
+        video = video.to(device)
         for t in range(len(video)):
             im = video[t]
             mean += im.view(im.size(0), -1).mean(1)

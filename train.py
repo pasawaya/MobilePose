@@ -129,8 +129,8 @@ def main(args):
     mean_name = 'means.npy'
     mean_path = os.path.join(root, mean_name)
     if not os.path.isfile(mean_path):
-        temp = dataset(args.t, root=root, transformer=None, output_size=args.resolution, train=True)
-        mean, std = compute_mean(temp)
+        mean, std = compute_mean(dataset(args.t, root=root, output_size=args.resolution, train=True),
+                                 device)
         np.save(mean_path, np.array([mean, std]))
 
     mean, std = np.load(os.path.join(root, 'means.npy'))
