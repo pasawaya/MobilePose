@@ -1,7 +1,7 @@
 
 import numpy as np
 from skimage.feature import plot_matches
-from skimage.draw import circle, line
+from skimage.draw import line
 from skimage.io import imshow
 from matplotlib import pyplot as plt
 from .evaluation import *

@@ -46,8 +46,7 @@ def train(model, loader, criterion, optimizer, device, r, scheduler=None, clip=N
             time_avg.update(time.time() - start)
 
             if debug:
-                debug_inputs(unnormalized, labels, centers)
-                # visualize(unnormalized, labels, outputs)
+                debug_predictions(unnormalized, labels, outputs)
 
             if isinstance(criterion, CoordinateLoss):
                 loss = criterion(*outputs, meta, device)
@@ -138,7 +137,7 @@ def main(args):
                                     mean=mean, std=std)
 
     debug_transformer = transformer(output_size=args.resolution, p_scale=0.0, p_flip=0.0, p_rotate=0.0)
-    train_dataset = dataset(args.t, root=root, transformer=debug_transformer, output_size=args.resolution,
+    train_dataset = dataset(args.t, root=root, transformer=train_transformer, output_size=args.resolution,
                             train=True, subset_size=args.subset_size, sigma_center=21, sigma_label=2)
     valid_dataset = dataset(args.t, root=root, transformer=valid_transformer, output_size=args.resolution,
                             train=False, subset_size=args.subset_size, sigma_center=21, sigma_label=2)
