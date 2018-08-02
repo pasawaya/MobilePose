@@ -125,8 +125,6 @@ def main(args):
         save_mean(dataset(args.t, root=root, output_size=args.resolution, train=True), device, mean_path)
 
     mean, std = np.load(mean_path)
-    print(mean)
-    print(std)
     train_transformer = transformer(output_size=args.resolution, mean=mean, std=std)
     valid_transformer = transformer(output_size=args.resolution,
                                     p_scale=0.0, p_flip=0.0, p_rotate=0.0,

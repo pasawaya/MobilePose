@@ -11,7 +11,7 @@ import cv2
 
 def save_mean(dataset, device, path):
     mean, std = torch.zeros(3).to(device), torch.zeros(3).to(device)
-    for i in range(1):
+    for i in range(len(dataset)):
         print(str(i) + ' / ' + str(len(dataset)))
         video, _, _, _, _ = dataset[i]
         video = video.to(device).view(video.shape[0], video.shape[1], -1)
