@@ -121,6 +121,10 @@ def center_from_joints(size, x, y):
 
 
 def compute_label_map(x, y, image_size, label_size, sigma):
+    if len(x.shape) < 2:
+        x = np.expand_dims(x, 0)
+        y = np.expand_dims(y, 0)
+
     r = label_size / image_size
     T, n_joints = x.shape[0], x.shape[1]
     label_map = np.zeros((T, n_joints, label_size, label_size))

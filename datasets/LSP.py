@@ -14,7 +14,7 @@ train_ratio = 0.95
 
 class LSP(Dataset):
     def __init__(self, T, root='data/LSP', transformer=None, output_size=256, train=True, subset_size=None,
-                 sigma=7, stride=4, offset=0, include_background=True):
+                 sigma_center=21, sigma_label=2, label_size=31):
         self.T = T
         self.root = root
         self.train = train
@@ -22,10 +22,9 @@ class LSP(Dataset):
         self.flag = int(train)
         self.transformer = transformer
         self.n_joints = 14
-        self.sigma = sigma
-        self.stride = stride
-        self.offset = offset
-        self.background = include_background
+        self.sigma_center = sigma_center
+        self.sigma_label = sigma_label
+        self.label_size = label_size
 
         annotations_label = 'train_' if train else 'valid_'
         self.annotations_path = os.path.join(self.root, annotations_label + 'annotations.json')
@@ -47,8 +46,8 @@ class LSP(Dataset):
         if self.transformer is not None:
             image, x, y, visibility, unnormalized = self.transformer(image, x, y, visibility)
 
-        label_map = compute_label_map(x, y, self.output_size, self.sigma, self.stride, self.offset, self.background)
-        center_map = compute_center_map(self.output_size)
+        label_map = compute_label_map(x, y, self.output_size, self.label_size, self.sigma_label)
+        center_map = compute_center_map(x, y, self.output_size, self.sigma_center)
         x, y = np.expand_dims(x, 1), np.expand_dims(y, 1)
         meta = torch.from_numpy(np.squeeze(np.hstack([x, y]))).float()
 

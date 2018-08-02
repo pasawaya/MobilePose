@@ -12,7 +12,7 @@ from scipy.io import loadmat
 
 class PennAction(Dataset):
     def __init__(self, T, root='../data/PennAction', transformer=None, output_size=256, train=True, subset_size=None,
-                 sigma=21, label_size=31):
+                 sigma_center=21, sigma_label=2, label_size=31):
         self.T = T
         self.root = root
         self.train = train
@@ -20,7 +20,8 @@ class PennAction(Dataset):
         self.flag = int(train)
         self.transformer = transformer
         self.n_joints = 14
-        self.sigma = sigma
+        self.sigma_center = sigma_center
+        self.sigma_label = sigma_label
         self.label_size = label_size
 
         annotations_label = 'train_' if train else 'valid_'
@@ -42,8 +43,8 @@ class PennAction(Dataset):
         if self.transformer is not None:
             frames, x, y, visibility, bbox, unnormalized = self.transformer(frames, x, y, visibility, bbox)
 
-        label_map = compute_label_map(x, y, self.output_size, self.label_size, 2)
-        center_map = compute_center_map(x, y, self.output_size, self.sigma)
+        label_map = compute_label_map(x, y, self.output_size, self.label_size, self.sigma_label)
+        center_map = compute_center_map(x, y, self.output_size, self.sigma_center)
         meta = torch.from_numpy(np.squeeze(np.hstack([x, y]))).float()
         return frames, label_map, center_map, meta, unnormalized
 
