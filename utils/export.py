@@ -3,8 +3,8 @@ import torch.onnx
 import configargparse
 import argparse
 import os
+import torch
 # import onnx_coreml
-from datasets.PennAction import PennAction
 from models.DeployPoseMachine import *
 
 
@@ -32,8 +32,8 @@ def main(args):
         model.load_state_dict(checkpoint['state_dict'])
 
     print('Exporting...')
-    dataset = PennAction(T=args.t, output_size=args.resolution)
-    save_coreml(model, dataset[0], args.onnx_name, args.core_ml_name)
+    dummy = torch.zeros((args.t, args.resolution, args.resolution))
+    save_coreml(model, dummy, args.onnx_name, args.core_ml_name)
     print('Done!')
 
 
