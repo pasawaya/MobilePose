@@ -122,4 +122,4 @@ class LPM(nn.Module):
             beliefs.append(b)
             b_prev, h_prev, c_prev = b, h, c
 
-        return beliefs
+        return beliefs[-1]
