@@ -110,12 +110,17 @@ class LPM(nn.Module):
     def forward(self, x_0, x_1, x_2, x_3, x_4, centers):
         centers = F.avg_pool2d(centers, 9, stride=8)
 
+        x_0 = torch.unsqueeze(x_0, 0)
         b = self.process(x_0)
 
         b, h, c = self.stage(x_0, b, None, None, centers)
+        x_1 = torch.unsqueeze(x_1, 0)
         b, h, c = self.stage(x_1, b, h, c, centers)
+        x_2 = torch.unsqueeze(x_2, 0)
         b, h, c = self.stage(x_2, b, h, c, centers)
+        x_3 = torch.unsqueeze(x_3, 0)
         b, h, c = self.stage(x_3, b, h, c, centers)
+        x_4 = torch.unsqueeze(x_4, 0)
         b, h, c = self.stage(x_4, b, h, c, centers)
 
         return b
