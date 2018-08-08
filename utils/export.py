@@ -4,7 +4,11 @@ import configargparse
 import argparse
 import os
 import torch
-from models.DeployPoseMachine import *
+
+import sys
+sys.path.insert(0, '../models')
+
+from DeployPoseMachine import LPM
 
 
 def save_coreml(model, dummy_input, onnx_model_name, mlmodel_name):
