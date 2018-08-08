@@ -92,7 +92,7 @@ class Stage(nn.Module):
         h, c = self.lstm(f, h_prev, c_prev)
         b = self.generate(h)
         coords = dsntnn.dsnt(dsntnn.flat_softmax(b))
-        return b, h, c. coords
+        return b, h, c, coords
 
 
 class LPM(nn.Module):
