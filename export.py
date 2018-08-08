@@ -1,5 +1,6 @@
 
-import torch.onnx
+# import torch.onnx
+import onnx_coreml
 import configargparse
 import argparse
 import os
@@ -8,13 +9,13 @@ from models.DeployPoseMachine import LPM
 
 
 def save_coreml(model, dummy_input, onnx_model_name, mlmodel_name):
-    torch.onnx.export(model, dummy_input, onnx_model_name)
-    # mlmodel = onnx_coreml.convert(onnx_model_name,
-    #                               mode='regressor',
-    #                               image_input_names='0',
-    #                               image_output_names='309',
-    #                               predicted_feature_name='keypoints')
-    # mlmodel.save(mlmodel_name)
+    # torch.onnx.export(model, dummy_input, onnx_model_name)
+    mlmodel = onnx_coreml.convert(onnx_model_name,
+                                  mode='regressor',
+                                  image_input_names='0',
+                                  image_output_names='309',
+                                  predicted_feature_name='keypoints')
+    mlmodel.save(mlmodel_name)
 
 
 def main(args):
