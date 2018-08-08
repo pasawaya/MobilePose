@@ -8,7 +8,7 @@ import torch
 import sys
 sys.path.insert(0, './models')
 
-from DeployPoseMachine import LPM
+from models.DeployPoseMachine import LPM
 
 
 def save_coreml(model, dummy_input, onnx_model_name, mlmodel_name):
