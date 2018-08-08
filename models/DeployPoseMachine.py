@@ -108,6 +108,7 @@ class LPM(nn.Module):
         self.stage.lstm.f_h.bias.data.fill_(1.0)
 
     def forward(self, x_0, x_1, x_2, x_3, x_4, centers):
+        centers = torch.unsqueeze(centers, 0)
         centers = F.avg_pool2d(centers, 9, stride=8)
 
         x_0 = torch.unsqueeze(x_0, 0)
