@@ -5,8 +5,9 @@
 # from models.DeployPoseMachine import LPM
 
 import onnx
+from onnx import onnx_pb
 
-# import onnx_coreml
+import onnx_coreml
 
 import configargparse
 import argparse
@@ -31,18 +32,21 @@ def main(args):
     # dummy_centers = torch.zeros((1, args.resolution, args.resolution)).to(device)
     # torch.onnx.export(model, (dummy_images, dummy_images, dummy_images, dummy_images, dummy_images, dummy_centers), args.onnx_name)
     #
-    # print('Exporting CoreML...')
-    # mlmodel = onnx_coreml.convert(args.onnx_name,
-    #                               mode='regressor',
-    #                               image_input_names=['0'],
-    #                               image_output_names=['309'],
-    #                               predicted_feature_name='heatmap')
-    # mlmodel.save(args.core_ml_name)
-    # print('Done!')
+    print('Exporting CoreML...')
+    model_file = open(args.onnx_name, 'rb')
+    model_proto = onnx_pb.ModelProto()
+    model_proto.ParseFromString(model_file.read())
+    mlmodel = onnx_coreml.convert(model_proto,
+                                  mode='regressor',
+                                  image_input_names=['0', '1', '2', '3', '4', '5'],
+                                  image_output_names=['288'],
+                                  predicted_feature_name='heatmap')
+    mlmodel.save(args.core_ml_name)
+    print('Done!')
 
-    onnx_model = onnx.load(args.onnx_name)
-    onnx.checker.check_model(onnx_model)
-    print(onnx.helper.printable_graph(onnx_model.graph))
+    # onnx_model = onnx.load(args.onnx_name)
+    # onnx.checker.check_model(onnx_model)
+    # print(onnx.helper.printable_graph(onnx_model.graph))
 
 
 if __name__ == '__main__':
