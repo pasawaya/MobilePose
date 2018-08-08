@@ -6,7 +6,7 @@ import os
 import torch
 
 import sys
-sys.path.insert(0, '../models')
+sys.path.insert(0, './models')
 
 from DeployPoseMachine import LPM
 
