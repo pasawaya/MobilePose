@@ -31,8 +31,9 @@ def main(args):
         model.load_state_dict(checkpoint['state_dict'])
 
     print('Exporting...')
-    dummy = torch.zeros((args.t, args.resolution, args.resolution))
-    save_coreml(model, dummy, args.onnx_name, args.core_ml_name)
+    dummy_images = torch.zeros((args.t, args.resolution, args.resolution))
+    dummy_centers = torch.zeros((1, args.resolution, args.resolution))
+    save_coreml(model, (dummy_images, dummy_centers), args.onnx_name, args.core_ml_name)
     print('Done!')
 
 
