@@ -1,10 +1,12 @@
 
 # import os
 # import torch
-# import torch.onnx
+# import torch.onn
 # from models.DeployPoseMachine import LPM
 
-import onnx_coreml
+import onnx
+
+# import onnx_coreml
 
 import configargparse
 import argparse
@@ -28,15 +30,19 @@ def main(args):
     # dummy_images = torch.zeros((1, args.t, 3, args.resolution, args.resolution)).to(device)
     # dummy_centers = torch.zeros((1, 1, args.resolution, args.resolution)).to(device)
     # torch.onnx.export(model, (dummy_images, dummy_centers), args.onnx_name)
+    #
+    # print('Exporting CoreML...')
+    # mlmodel = onnx_coreml.convert(args.onnx_name,
+    #                               mode='regressor',
+    #                               image_input_names='0',
+    #                               image_output_names='309',
+    #                               predicted_feature_name='keypoints')
+    # mlmodel.save(args.core_ml_name)
+    # print('Done!')
 
-    print('Exporting CoreML...')
-    mlmodel = onnx_coreml.convert(args.onnx_name,
-                                  mode='regressor',
-                                  image_input_names='0',
-                                  image_output_names='309',
-                                  predicted_feature_name='keypoints')
-    mlmodel.save(args.core_ml_name)
-    print('Done!')
+    onnx_model = onnx.load(args.onnx_name)
+    onnx.checker.check_model(onnx_model)
+    print(onnx.helper.printable_graph(onnx_model.graph))
 
 
 if __name__ == '__main__':
