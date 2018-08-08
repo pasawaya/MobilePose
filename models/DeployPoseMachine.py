@@ -2,7 +2,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import dsntnn
 from .modules.ConvLSTM import ConvLSTM
 from utils.train_utils import initialize_weights_kaiming
 
@@ -32,8 +31,7 @@ class Processor(nn.Module):
         )
 
     def forward(self, x_t):
-        b = self.process(x_t)
-        return b, dsntnn.dsnt(dsntnn.flat_softmax(b))
+        return self.process(x_t)
 
 
 class Encoder(nn.Module):
@@ -91,8 +89,7 @@ class Stage(nn.Module):
         f = torch.cat([f, b_prev, centers], dim=1)
         h, c = self.lstm(f, h_prev, c_prev)
         b = self.generate(h)
-        coords = dsntnn.dsnt(dsntnn.flat_softmax(b))
-        return b, h, c, coords
+        return b, h, c
 
 
 class LPM(nn.Module):
@@ -117,14 +114,12 @@ class LPM(nn.Module):
         x_0 = torch.squeeze(x[0], 1)
         b_0, coords = self.process(x_0)
         beliefs = [b_0]
-        coordinates = [coords]
 
         b_prev, h_prev, c_prev = b_0, None, None
         for t in range(self.T):
             x_t = torch.squeeze(x[t], 1)
-            b, h, c, coords = self.stage(x_t, b_prev, h_prev, c_prev, centers)
+            b, h, c = self.stage(x_t, b_prev, h_prev, c_prev, centers)
             beliefs.append(b)
-            coordinates.append(coords)
             b_prev, h_prev, c_prev = b, h, c
 
-        return beliefs, coordinates
+        return beliefs
