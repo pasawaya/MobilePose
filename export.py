@@ -1,21 +1,13 @@
 
-# import torch.onnx
-import onnx_coreml
-import configargparse
-import argparse
 import os
 import torch
+import torch.onnx
 from models.DeployPoseMachine import LPM
 
+# import onnx_coreml
 
-def save_coreml(model, dummy_input, onnx_model_name, mlmodel_name):
-    # torch.onnx.export(model, dummy_input, onnx_model_name)
-    mlmodel = onnx_coreml.convert(onnx_model_name,
-                                  mode='regressor',
-                                  image_input_names='0',
-                                  image_output_names='309',
-                                  predicted_feature_name='keypoints')
-    mlmodel.save(mlmodel_name)
+import configargparse
+import argparse
 
 
 def main(args):
@@ -30,13 +22,20 @@ def main(args):
         path = os.path.join(args.model_dir, args.checkpoint_name)
         checkpoint = torch.load(path)
         model.load_state_dict(checkpoint['state_dict'])
-
     model = model.to(device)
 
-    print('Exporting...')
+    print('Exporting ONNX...')
     dummy_images = torch.zeros((1, args.t, 3, args.resolution, args.resolution)).to(device)
     dummy_centers = torch.zeros((1, 1, args.resolution, args.resolution)).to(device)
-    save_coreml(model, (dummy_images, dummy_centers), args.onnx_name, args.core_ml_name)
+    torch.onnx.export(model, (dummy_images, dummy_centers), args.onnx_name)
+
+    # print('Exporting CoreML...')
+    # mlmodel = onnx_coreml.convert(args.onnx_name,
+    #                               mode='regressor',
+    #                               image_input_names='0',
+    #                               image_output_names='309',
+    #                               predicted_feature_name='keypoints')
+    # mlmodel.save(args.core_ml_name)
     print('Done!')
 
 
