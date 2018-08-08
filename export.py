@@ -1,7 +1,7 @@
 
 import os
 import torch
-import torch.onn
+import torch.onnx
 from models.DeployPoseMachine import LPM
 
 # import onnx
@@ -27,7 +27,7 @@ def main(args):
     model = model.to(device)
 
     print('Exporting ONNX...')
-    dummy_images = torch.zeros((args.t, 3, args.resolution, args.resolution)).to(device)
+    dummy_images = torch.zeros((3, args.resolution, args.resolution)).to(device)
     dummy_centers = torch.zeros((1, 1, args.resolution, args.resolution)).to(device)
     torch.onnx.export(model, (dummy_images, dummy_images, dummy_images, dummy_images, dummy_images, dummy_centers), args.onnx_name)
     #
@@ -39,10 +39,10 @@ def main(args):
     #                               predicted_feature_name='heatmap')
     # mlmodel.save(args.core_ml_name)
     # print('Done!')
-
-    onnx_model = onnx.load(args.onnx_name)
-    onnx.checker.check_model(onnx_model)
-    print(onnx.helper.printable_graph(onnx_model.graph))
+    #
+    # onnx_model = onnx.load(args.onnx_name)
+    # onnx.checker.check_model(onnx_model)
+    # print(onnx.helper.printable_graph(onnx_model.graph))
 
 
 if __name__ == '__main__':
