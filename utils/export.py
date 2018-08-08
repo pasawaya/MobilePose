@@ -4,7 +4,6 @@ import configargparse
 import argparse
 import os
 import torch
-# import onnx_coreml
 from models.DeployPoseMachine import *
 
 
