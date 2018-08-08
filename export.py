@@ -1,10 +1,10 @@
 
-import os
-import torch
-import torch.onnx
-from models.DeployPoseMachine import LPM
+# import os
+# import torch
+# import torch.onnx
+# from models.DeployPoseMachine import LPM
 
-# import onnx
+import onnx
 
 # import onnx_coreml
 
@@ -13,23 +13,23 @@ import argparse
 
 
 def main(args):
-    device_name = 'cpu' if args.gpu is None else 'cuda:' + str(args.gpu)
-    device = torch.device(device_name)
-
-    n_joints = 14
-    model = LPM(3, 32, n_joints + 1, device, T=args.t)
-
-    if args.checkpoint_name is not None:
-        print('Loading checkpoint...')
-        path = os.path.join(args.model_dir, args.checkpoint_name)
-        checkpoint = torch.load(path)
-        model.load_state_dict(checkpoint['state_dict'])
-    model = model.to(device)
-
-    print('Exporting ONNX...')
-    dummy_images = torch.zeros((3, args.resolution, args.resolution)).to(device)
-    dummy_centers = torch.zeros((1, 1, args.resolution, args.resolution)).to(device)
-    torch.onnx.export(model, (dummy_images, dummy_images, dummy_images, dummy_images, dummy_images, dummy_centers), args.onnx_name)
+    # device_name = 'cpu' if args.gpu is None else 'cuda:' + str(args.gpu)
+    # device = torch.device(device_name)
+    #
+    # n_joints = 14
+    # model = LPM(3, 32, n_joints + 1, device, T=args.t)
+    #
+    # if args.checkpoint_name is not None:
+    #     print('Loading checkpoint...')
+    #     path = os.path.join(args.model_dir, args.checkpoint_name)
+    #     checkpoint = torch.load(path)
+    #     model.load_state_dict(checkpoint['state_dict'])
+    # model = model.to(device)
+    #
+    # print('Exporting ONNX...')
+    # dummy_images = torch.zeros((3, args.resolution, args.resolution)).to(device)
+    # dummy_centers = torch.zeros((1, 1, args.resolution, args.resolution)).to(device)
+    # torch.onnx.export(model, (dummy_images, dummy_images, dummy_images, dummy_images, dummy_images, dummy_centers), args.onnx_name)
     #
     # print('Exporting CoreML...')
     # mlmodel = onnx_coreml.convert(args.onnx_name,
@@ -40,9 +40,9 @@ def main(args):
     # mlmodel.save(args.core_ml_name)
     # print('Done!')
     #
-    # onnx_model = onnx.load(args.onnx_name)
-    # onnx.checker.check_model(onnx_model)
-    # print(onnx.helper.printable_graph(onnx_model.graph))
+    onnx_model = onnx.load(args.onnx_name)
+    onnx.checker.check_model(onnx_model)
+    print(onnx.helper.printable_graph(onnx_model.graph))
 
 
 if __name__ == '__main__':
