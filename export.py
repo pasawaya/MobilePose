@@ -29,7 +29,7 @@ def main(args):
         path = os.path.join(args.model_dir, args.checkpoint_name)
         checkpoint = torch.load(path)
         model.load_state_dict(checkpoint['state_dict'])
-        
+
     model = model.to(device)
 
     print('Exporting...')

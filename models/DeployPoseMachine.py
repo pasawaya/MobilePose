@@ -127,4 +127,4 @@ class LPM(nn.Module):
             coordinates.append(coords)
             b_prev, h_prev, c_prev = b, h, c
 
-        return torch.stack(beliefs, 1), torch.stack(coordinates, 1)
+        return beliefs, coordinates
