@@ -1,14 +1,51 @@
 
 import torch.onnx
+import configargparse
+import argparse
+import os
 import onnx_coreml
+from datasets.PennAction import PennAction
+from models.DeployPoseMachine import *
 
 
-def save_coreml(model, dummy_input, model_name):
-    onnx_model_name = 'model.onnx'
+def save_coreml(model, dummy_input, onnx_model_name, mlmodel_name):
     torch.onnx.export(model, dummy_input, onnx_model_name)
     mlmodel = onnx_coreml.convert(onnx_model_name,
                                   mode='regressor',
                                   image_input_names='0',
                                   image_output_names='309',
                                   predicted_feature_name='keypoints')
-    mlmodel.save(model_name)
+    mlmodel.save(mlmodel_name)
+
+
+def main(args):
+    device_name = 'cpu' if args.gpu is None else 'cuda:' + str(args.gpu)
+    device = torch.device(device_name)
+
+    n_joints = 14
+    model = LPM(3, 32, n_joints + 1, device, T=args.t)
+
+    if args.checkpoint_name is not None:
+        print('Loading checkpoint...')
+        path = os.path.join(args.model_dir, args.checkpoint_name)
+        checkpoint = torch.load(path)
+        model.load_state_dict(checkpoint['state_dict'])
+
+    print('Exporting...')
+    dataset = PennAction(T=args.t, output_size=args.resolution)
+    save_coreml(model, dataset[0], args.onnx_name, args.core_ml_name)
+    print('Done!')
+
+
+if __name__ == '__main__':
+    parser = configargparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add('--t', default=10, type=int, help='length of input sequences (i.e. # frames)')
+    parser.add('--resolution', default=256, type=int, help='model input image resolution')
+    parser.add('--checkpoint_name', default=None, type=str, help='checkpoint file name in experiments/ to resume from')
+    parser.add('--model_dir', default='experiments', type=str, help='directory to store/load checkpoints from')
+    parser.add('--onnx_name', default='model.onnx', type=str, help='name for onnx file')
+    parser.add('--core_ml_name', default='model.mlmodel', type=str, help='name for mlmodel file')
+    parser.add('--gpu', default=None, type=int, help='gpu id')
+
+    main(parser.parse_args())
