@@ -112,7 +112,7 @@ class LPM(nn.Module):
         centers = F.avg_pool2d(centers, 9, stride=8)
 
         x_0 = torch.squeeze(x[0], 1)
-        b_0, coords = self.process(x_0)
+        b_0 = self.process(x_0)
         beliefs = [b_0]
 
         b_prev, h_prev, c_prev = b_0, None, None
