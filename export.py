@@ -4,10 +4,6 @@ import configargparse
 import argparse
 import os
 import torch
-
-import sys
-sys.path.insert(0, './models')
-
 from models.DeployPoseMachine import LPM
 
 
