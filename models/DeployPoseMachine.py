@@ -107,19 +107,15 @@ class LPM(nn.Module):
         self.stage.lstm.f_x.bias.data.fill_(1.0)
         self.stage.lstm.f_h.bias.data.fill_(1.0)
 
-    def forward(self, x, centers):
-        x = torch.split(x, 1, dim=1)
+    def forward(self, x_0, x_1, x_2, x_3, x_4, centers):
         centers = F.avg_pool2d(centers, 9, stride=8)
 
-        x_0 = torch.squeeze(x[0], 1)
-        b_0 = self.process(x_0)
-        beliefs = [b_0]
+        b = self.process(x_0)
 
-        b_prev, h_prev, c_prev = b_0, None, None
-        for t in range(self.T):
-            x_t = torch.squeeze(x[t], 1)
-            b, h, c = self.stage(x_t, b_prev, h_prev, c_prev, centers)
-            beliefs.append(b)
-            b_prev, h_prev, c_prev = b, h, c
+        b, h, c = self.stage(x_0, b, None, None, centers)
+        b, h, c = self.stage(x_1, b, h, c, centers)
+        b, h, c = self.stage(x_2, b, h, c, centers)
+        b, h, c = self.stage(x_3, b, h, c, centers)
+        b, h, c = self.stage(x_4, b, h, c, centers)
 
-        return beliefs[-1]
+        return b
