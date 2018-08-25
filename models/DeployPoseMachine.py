@@ -122,6 +122,6 @@ class LPM(nn.Module):
         x_3 = torch.unsqueeze(x_3, 0)
         b, h, c = self.stage(x_3, b, h, c, centers)
         x_4 = torch.unsqueeze(x_4, 0)
-        b, h, c = self.stage(x_4, b, h, c, centers)
+        b, _, _ = self.stage(x_4, b, h, c, centers)
 
         return b
