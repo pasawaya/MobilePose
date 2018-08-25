@@ -1,8 +1,8 @@
 
-# import os
-# import torch
-# import torch.onnx
-# from models.DeployPoseMachine import LPM
+import os
+import torch
+import torch.onnx
+from models.DeployPoseMachine import LPM
 
 import onnx
 from onnx import onnx_pb
@@ -14,33 +14,31 @@ import argparse
 
 
 def main(args):
-    # device_name = 'cpu' if args.gpu is None else 'cuda:' + str(args.gpu)
-    # device = torch.device(device_name)
-    #
-    # n_joints = 14
-    # model = LPM(3, 32, n_joints + 1, device, T=args.t)
-    #
-    # if args.checkpoint_name is not None:
-    #     print('Loading checkpoint...')
-    #     path = os.path.join(args.model_dir, args.checkpoint_name)
-    #     checkpoint = torch.load(path)
-    #     model.load_state_dict(checkpoint['state_dict'])
-    # model = model.to(device)
-    #
-    # print('Exporting ONNX...')
-    # dummy_images = torch.zeros((3, args.resolution, args.resolution)).to(device)
-    # dummy_centers = torch.zeros((1, args.resolution, args.resolution)).to(device)
-    # torch.onnx.export(model, (dummy_images, dummy_images, dummy_images, dummy_images, dummy_images, dummy_centers), args.onnx_name)
-    #
+    device_name = 'cpu' if args.gpu is None else 'cuda:' + str(args.gpu)
+    device = torch.device(device_name)
+
+    n_joints = 14
+    model = LPM(3, 32, n_joints + 1, device, T=args.t)
+
+    if args.checkpoint_name is not None:
+        print('Loading checkpoint...')
+        path = os.path.join(args.model_dir, args.checkpoint_name)
+        checkpoint = torch.load(path)
+        model.load_state_dict(checkpoint['state_dict'])
+    model = model.to(device)
+
+    print('Exporting ONNX...')
+    dummy_images = torch.zeros((3, args.resolution, args.resolution)).to(device)
+    dummy_centers = torch.zeros((1, args.resolution, args.resolution)).to(device)
+    torch.onnx.export(model, (dummy_images, dummy_images, dummy_images, dummy_images, dummy_images, dummy_centers), args.onnx_name)
+
     print('Exporting CoreML...')
     model_file = open(args.onnx_name, 'rb')
     model_proto = onnx_pb.ModelProto()
     model_proto.ParseFromString(model_file.read())
     mlmodel = onnx_coreml.convert(model_proto,
                                   mode='regressor',
-                                  image_input_names=['0', '1', '2', '3', '4', '5'],
-                                  image_output_names=['288'],
-                                  predicted_feature_name='heatmap')
+                                  image_input_names=['0'])
     mlmodel.save(args.core_ml_name)
     print('Done!')
 
